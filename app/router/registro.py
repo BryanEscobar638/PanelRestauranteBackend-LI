@@ -12,7 +12,7 @@ from core.database import get_db
 
 router = APIRouter()
 
-
+# endpoint para conseguir los ultimos 15 estudiantes
 @router.get(
     "/",
     status_code=status.HTTP_200_OK,
@@ -32,11 +32,12 @@ def listar_estudiantes(db: Session = Depends(get_db)):
             detail="Error al obtener los estudiantes"
         )
     
+# endpoint para conseguir los todos los estudiantes
 @router.get(
     "/all",
     status_code=status.HTTP_200_OK,
-    summary="Obtener estudiantes (máx. 15)",
-    description="Devuelve hasta 15 registros de la tabla estudiantes ordenado por los mas recientes"
+    summary="Obtener estudiantes",
+    description="Devuelve todos los estudiantes"
 )
 def listar_estudiantes(db: Session = Depends(get_db)):
     try:
@@ -50,7 +51,6 @@ def listar_estudiantes(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error al obtener los estudiantes"
         )
-
 
 @router.get("/hoy",status_code=status.HTTP_200_OK,
     summary="Obtener estudiantes registrados en el dia actual",
