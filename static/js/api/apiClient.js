@@ -1,5 +1,6 @@
 // apiClient.js - Cliente central para realizar todas las peticiones a la API
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'http://172.16.0.28:8000';
 
 /**
  * Cliente central para realizar todas las peticiones a la API.

@@ -22,7 +22,7 @@ app.include_router(auth.router, prefix="/access", tags=["servicios de loggin"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Permitir solicitudes desde cualquier origen
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE"],  # Permitir estos métodos HTTP
     allow_headers=["*"],  # Permitir cualquier encabezado en las solicitudes
 )
