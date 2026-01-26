@@ -1,0 +1,41 @@
+<main class="container py-4">
+
+    <h1>ESTUDIANTES REGISTRADOS CON PLAN ALIMENTICIO</h1>
+
+    <div class="search-container-box">
+        <div class="search-panel">
+            <div class="search-group full-width">
+                <label for="nombreestudiante">Nombre (Apellido - Nombre)</label>
+                <input type="text" placeholder="Ej: Acevedo Gómez Victoria" class="professional-input"
+                    id="nombreestudiante">
+            </div>
+
+            <div class="search-row">
+                <div class="search-group">
+                    <label for="codigoestudiante">Código estudiante</label>
+                    <input type="text" placeholder="Código..." class="professional-input" id="codigoestudiante">
+                </div>
+
+                <div class="search-group">
+                    <label for="grado">Grado</label>
+                    <input type="text" placeholder="Grado..." class="professional-input" id="grado">
+                </div>
+
+                <button class="btn-search" id="btnBuscar">BUSCAR</button>
+            </div>
+        </div>
+    </div>
+
+    <table class="main-table">
+        <thead>
+            <tr>
+                <th>CODIGO</th>
+                <th>NOMBRE</th>
+                <th>GRADO</th>
+                <th>TIPO_ALIMENTACIÓN</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpodeestudiantes">
+        </tbody>
+    </table>
+</main>

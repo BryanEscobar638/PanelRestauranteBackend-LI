@@ -1,0 +1,80 @@
+/* CONFIGURACIÓN DEL CUERPO */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* SIDEBAR ESTILO */
+.sidebar {
+    width: 250px;           /* Ancho fijo */
+    height: 100vh;          /* Alto de toda la pantalla */
+    position: fixed;        /* Se queda quieto al hacer scroll */
+    top: 0;
+    left: 0;
+    background-color: #212529; /* Color oscuro profesional */
+    color: white;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #343a40;
+}
+
+/* NAVEGACIÓN Y LINKS */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    color: #adb5bd !important; /* Gris claro por defecto */
+    text-decoration: none !important; /* Quita subrayado */
+    transition: all 0.3s;
+    gap: 12px;
+}
+
+/* EVITAR AZUL EN HOVER Y VISITADOS */
+.nav-item:hover {
+    color: #ffffff !important;   /* Blanco al pasar el mouse */
+    background-color: #343a40;   /* Fondo un poco más claro */
+}
+
+.nav-item.active {
+    color: #ffffff !important;
+    background-color: #0d6efd;   /* Color azul de marca para el activo */
+    border-left: 4px solid #fff;
+}
+
+/* SOLUCIÓN AL SOLAPAMIENTO (The Fix) */
+#layoutSidenav_content {
+    margin-left: 250px;         /* Empuja el contenido el mismo ancho del sidebar */
+    padding: 20px;
+    min-height: 100vh;
+    transition: margin-left 0.3s;
+}
+
+.main-content {
+    width: 100%;
+}
+
+/* RESPONSIVO: Si la pantalla es pequeña, el sidebar se oculta o ajusta */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px; /* Sidebar colapsado */
+    }
+    .sidebar h2, .nav-item span {
+        display: none; /* Esconde texto, deja solo iconos */
+    }
+    #layoutSidenav_content {
+        margin-left: 70px;
+    }
+}

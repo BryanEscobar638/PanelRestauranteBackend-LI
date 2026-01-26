@@ -1,0 +1,50 @@
+<main class="container py-4">
+
+    <h1>BÚSQUEDA POR FILTROS</h1>
+
+    <div class="search-container-box">
+        <div class="search-panel">
+
+            <div class="search-row">
+                <div class="search-group">
+                    <label>Fecha de inicio</label>
+                    <input type="date" class="professional-input" id="fecha_inicio">
+                </div>
+                <div class="search-group">
+                    <label>Fecha de fin</label>
+                    <input type="date" class="professional-input" id="fecha_fin">
+                </div>
+                <button class="btn-action btn-red" id="borrarfecha">BORRAR FECHA</button>
+            </div>
+
+            <div class="search-row mt-20">
+                <div class="search-group">
+                    <label>Código estudiante</label>
+                    <input type="text" placeholder="Escriba el código..." class="professional-input"
+                        id="codigoestudiante">
+                </div>
+                <button class="btn-action btn-blue" id="btnbuscar">BUSCAR</button>
+                <button class="btn-action btn-green" id="btnexcel">DESCARGAR EXCEL</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th>CODIGO</th>
+                    <th>NOMBRE</th>
+                    <th>GRADO</th>
+                    <th>TIPO_ALIMENTACIÓN</th>
+                    <th>FECHA Y HORA</th>
+                    <th>PLAN</th>
+                    <th>ESTADO</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpodedashboard">
+            </tbody>
+        </table>
+    </div>
+</main>
