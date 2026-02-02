@@ -258,14 +258,11 @@ def get_estudiantes_con_plan(db: Session):
         raise
 
 def buscar_estudiantes(
-    db: Session,
-    codigo_estudiante: str = None,
-    nombre: str = None,
+    db: Session, 
+    codigo_estudiante: str = None, 
+    nombre: str = None, 
     grado: str = None
 ):
-    """
-    Buscador flexible por código, nombre, grado o cualquier combinación.
-    """
     try:
         base_query = """
             SELECT DISTINCT
@@ -285,7 +282,8 @@ def buscar_estudiantes(
             params["codigo"] = f"%{codigo_estudiante}%"
 
         if nombre:
-            conditions.append("e.nombre LIKE :nombre")
+            # Usamos COLLATE utf8mb4_general_ci para ignorar tildes y mayúsculas
+            conditions.append("e.nombre COLLATE utf8mb4_general_ci LIKE :nombre")
             params["nombre"] = f"%{nombre}%"
 
         if grado:
