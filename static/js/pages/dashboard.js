@@ -1,6 +1,6 @@
 import { dashboardService } from "../api/dashboard.service.js";
 
-function CrearFila(data){
+function CrearFila(data) {
     return `
         <tr>
             <td>${data.codigo_estudiante}</td>
@@ -15,25 +15,27 @@ function CrearFila(data){
 }
 
 function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
-    // Extraemos los valores de forma segura (por si vienen nulos o indefinidos)
-    const refrigerios = consumoshoy.conteo?.refrigerio || 0;
-    const almuerzos = consumoshoy.conteo?.almuerzo || 0;
+    // Extraemos los valores del nuevo formato del backend
+    // Estructura esperada: consumoshoy = { total_estudiantes_hoy: X, conteo: { refrigerio: Y, almuerzo: Z } }
+    const refrigerios = consumoshoy.conteo?.refrigerio ?? 0;
+    const almuerzos = consumoshoy.conteo?.almuerzo ?? 0;
+    const totalHoy = consumoshoy.total_estudiantes_hoy ?? 0;
 
     return `
         <div class="cards-grid">
             <div class="card-item">
                 <h4>Total Estudiantes</h4>
-                <p class="card-text fs-1 fw-bold" id="totalestudiantes">${totalestudiantes.total_estudiantes}</p>
+                <p class="card-text fs-1 fw-bold" id="totalestudiantes">${totalestudiantes.total_estudiantes || 0}</p>
             </div>
             
             <div class="card-item">
                 <h4>Planes Activos</h4>
-                <p class="card-text fs-1 fw-bold" id="planesactivos">${planes.total_estudiantes}</p>
+                <p class="card-text fs-1 fw-bold" id="planesactivos">${planes.total_estudiantes || 0}</p>
             </div>
 
             <div class="card shadow-sm border-0 p-3 card-item">
                 <div class="card-body p-0">
-                    <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy</h4>
+                    <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy (${totalHoy})</h4>
                     
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-secondary fw-medium">REFRIGERIOS</span>
@@ -51,66 +53,52 @@ function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
 
             <div class="card-item">
                 <h4>Consumos del Mes</h4>
-                <p class="card-text fs-1 fw-bold" id="consumosmes">${consumosmes.total_consumo}</p>
+                <p class="card-text fs-1 fw-bold" id="consumosmes">${consumosmes.total_consumo || 0}</p>
             </div>
         </div>
     `;
 }
 
-
 async function init() {
     console.log("✅ dashboard.js cargado correctamente");
 
-    const totalestudiantes = await dashboardService.getTotalEstudiantes();
-    const consumoshoy = await dashboardService.getConsumidoresHoy();
-    const planes = await dashboardService.getPlanesActivos();
-    const consumosmes = await dashboardService.getConsumoMes();
-    let divcartas = document.getElementById("cartas");
+    try {
+        // Llamadas en paralelo para mejorar la velocidad de carga
+        const [totalestudiantes, consumoshoy, planes, consumosmes, estudiantes_info] = await Promise.all([
+            dashboardService.getTotalEstudiantes(),
+            dashboardService.getConsumidoresHoy(),
+            dashboardService.getPlanesActivos(),
+            dashboardService.getConsumoMes(),
+            dashboardService.getStudents()
+        ]);
 
-    divcartas.innerHTML = "";
-    divcartas.innerHTML = cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes);
-    console.log("totalestudiantes: ", totalestudiantes);
-    console.log("consumoshoy: ", consumoshoy);
-    console.log("planes: ", planes);
-    console.log("consumosmes: ", consumosmes);
-    console.log("AHHHHHHHHH");
+        let divcartas = document.getElementById("cartas");
+        divcartas.innerHTML = cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes);
 
-    const estudiantes_info = await dashboardService.getStudents();
-    console.log("estudiantes_info:", estudiantes_info);
+        const tbody = document.getElementById("cuerpodedashboard");
+        const data = estudiantes_info.data || [];
+        
+        const formatDateTime = (isoString) => {
+            if (!isoString) return "";
+            return isoString.replace("T", " - ").split('.')[0]; // Quitamos milisegundos si existen
+        };
 
-    const tbody = document.getElementById("cuerpodedashboard");
-    tbody.innerHTML = "";
-    let filas = "";
-
-    const data = estudiantes_info.data; // arreglo real
-    console.log("data:", data);
-    console.log("antes del for");
-
-    // Función para formatear fecha/hora ISO a "YYYY-MM-DD - HH:MM:SS"
-    const formatDateTime = (isoString) => {
-        if (!isoString) return "";
-        return isoString.replace("T", " - ");
-    };
-
-    for (let i = 0; i < data.length; i++) {
-        const estudiante = { ...data[i] }; // clonamos el objeto para no modificar original
-
-        // Recorremos todas las propiedades del objeto
-        for (const key in estudiante) {
-            if (typeof estudiante[key] === "string" && estudiante[key].includes("T")) {
-                estudiante[key] = formatDateTime(estudiante[key]);
+        let filas = "";
+        data.forEach(item => {
+            const estudiante = { ...item };
+            for (const key in estudiante) {
+                if (typeof estudiante[key] === "string" && estudiante[key].includes("T")) {
+                    estudiante[key] = formatDateTime(estudiante[key]);
+                }
             }
-        }
+            filas += CrearFila(estudiante);
+        });
 
-        const fila = CrearFila(estudiante);
-        filas += fila;
-        console.log("entra", estudiante);
+        tbody.innerHTML = filas;
+
+    } catch (error) {
+        console.error("❌ Error inicializando el dashboard:", error);
     }
-
-    console.log("después del for");
-    tbody.innerHTML = filas;
 }
-
-
 
 export { init };

@@ -101,24 +101,25 @@ def get_registers_filtered(
         logger.error(f"Error al filtrar registros: {e}")
         raise
 
+# 3️⃣ Registros del día
 def get_registers_today(db: Session, codigo_estudiante: str = None):
     try:
         query = """
-            SELECT 
-                rv.id, 
-                rv.codigo_estudiante, 
-                e.nombre, 
-                e.grado, 
-                e.tipo_alimentacion, 
-                rv.fecha_hora, 
-                rv.plan, 
+            SELECT
+                rv.id,
+                rv.codigo_estudiante,
+                e.nombre,
+                e.grado,
+                e.tipo_alimentacion,
+                rv.fecha_hora,
+                rv.plan,
                 rv.estado
             FROM cafeteria.registros_validacion rv
-            INNER JOIN cafeteria.estudiantes e 
+            INNER JOIN cafeteria.estudiantes e
                 ON rv.codigo_estudiante = e.codigo_estudiante
             WHERE rv.fecha = CURDATE()
         """
-        
+
         params = {}
         if codigo_estudiante:
             query += " AND rv.codigo_estudiante = :codigo_estudiante"
@@ -126,22 +127,7 @@ def get_registers_today(db: Session, codigo_estudiante: str = None):
 
         query += " ORDER BY rv.fecha_hora DESC"
 
-        # Ejecutar la consulta
-        registros = db.execute(text(query), params).mappings().all()
-
-        # --- Lógica de filtrado y conteo ---
-        # Filtramos la lista 'registros' buscando en la columna 'plan' (o 'tipo_alimentacion')
-        total_refrigerios = sum(1 for r in registros if r['plan'] == "REFRIGERIO")
-        total_almuerzos = sum(1 for r in registros if r['plan'] == "ALMUERZO")
-
-        return {
-            "registros": registros,
-            "conteo": {
-                "refrigerio": total_refrigerios,
-                "almuerzo": total_almuerzos
-            }
-        }
-
+        return db.execute(text(query), params).mappings().all()
     except Exception as e:
         logger.error(f"Error al obtener registros del día: {e}")
         raise
@@ -158,17 +144,27 @@ def count_all_students(db: Session) -> int:
         logger.error(f"Error al contar estudiantes: {e}")
         raise
 
-def count_students_today(db: Session) -> int:
+def count_students_today(db: Session):
     try:
         query = text("""
-            SELECT COUNT(DISTINCT rv.codigo_estudiante) AS total
-            FROM cafeteria.registros_validacion rv
-            WHERE DATE(rv.fecha_hora) = CURDATE()
+            SELECT 
+                SUM(CASE WHEN plan = 'REFRIGERIO' THEN 1 ELSE 0 END) AS total_refrigerio,
+                SUM(CASE WHEN plan = 'ALMUERZO' THEN 1 ELSE 0 END) AS total_almuerzo,
+                COUNT(DISTINCT codigo_estudiante) AS total_unicos
+            FROM cafeteria.registros_validacion
+            WHERE fecha = CURDATE()
         """)
-        result = db.execute(query).scalar()  # devuelve el número total
-        return result or 0
+        
+        result = db.execute(query).mappings().first()
+        
+        # Retornamos un diccionario con los conteos
+        return {
+            "refrigerio": result["total_refrigerio"] or 0,
+            "almuerzo": result["total_almuerzo"] or 0,
+            "total_estudiantes_hoy": result["total_unicos"] or 0
+        }
     except Exception as e:
-        logger.error(f"Error al contar estudiantes del día: {e}")
+        logger.error(f"Error al contar consumos del día: {e}")
         raise
 
 def total_planalimenticio(db: Session):
