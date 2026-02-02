@@ -14,21 +14,41 @@ function CrearFila(data){
     `;
 }
 
-function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes){
+function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
+    // Extraemos los valores de forma segura (por si vienen nulos o indefinidos)
+    const refrigerios = consumoshoy.conteo?.refrigerio || 0;
+    const almuerzos = consumoshoy.conteo?.almuerzo || 0;
+
     return `
         <div class="cards-grid">
             <div class="card-item">
                 <h4>Total Estudiantes</h4>
                 <p class="card-text fs-1 fw-bold" id="totalestudiantes">${totalestudiantes.total_estudiantes}</p>
             </div>
+            
             <div class="card-item">
                 <h4>Planes Activos</h4>
                 <p class="card-text fs-1 fw-bold" id="planesactivos">${planes.total_estudiantes}</p>
             </div>
-            <div class="card-item">
-                <h4>Consumos Hoy</h4>
-                <p class="card-text fs-1 fw-bold" id="consumoshoy">${consumoshoy.total_estudiantes_hoy}</p>
+
+            <div class="card shadow-sm border-0 p-3 card-item">
+                <div class="card-body p-0">
+                    <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy</h4>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary fw-medium">REFRIGERIOS</span>
+                        <span class="fs-3 fw-bold text-primary" id="consumosrefrigerio">${refrigerios}</span>
+                    </div>
+
+                    <hr class="my-2 opacity-25">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary fw-medium">ALMUERZO</span>
+                        <span class="fs-3 fw-bold text-success" id="consumosalmuerzo">${almuerzos}</span>
+                    </div>
+                </div>
             </div>
+
             <div class="card-item">
                 <h4>Consumos del Mes</h4>
                 <p class="card-text fs-1 fw-bold" id="consumosmes">${consumosmes.total_consumo}</p>

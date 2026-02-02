@@ -101,25 +101,24 @@ def get_registers_filtered(
         logger.error(f"Error al filtrar registros: {e}")
         raise
 
-# 3️⃣ Registros del día
 def get_registers_today(db: Session, codigo_estudiante: str = None):
     try:
         query = """
-            SELECT
-                rv.id,
-                rv.codigo_estudiante,
-                e.nombre,
-                e.grado,
-                e.tipo_alimentacion,
-                rv.fecha_hora,
-                rv.plan,
+            SELECT 
+                rv.id, 
+                rv.codigo_estudiante, 
+                e.nombre, 
+                e.grado, 
+                e.tipo_alimentacion, 
+                rv.fecha_hora, 
+                rv.plan, 
                 rv.estado
             FROM cafeteria.registros_validacion rv
-            INNER JOIN cafeteria.estudiantes e
+            INNER JOIN cafeteria.estudiantes e 
                 ON rv.codigo_estudiante = e.codigo_estudiante
             WHERE rv.fecha = CURDATE()
         """
-
+        
         params = {}
         if codigo_estudiante:
             query += " AND rv.codigo_estudiante = :codigo_estudiante"
@@ -127,7 +126,22 @@ def get_registers_today(db: Session, codigo_estudiante: str = None):
 
         query += " ORDER BY rv.fecha_hora DESC"
 
-        return db.execute(text(query), params).mappings().all()
+        # Ejecutar la consulta
+        registros = db.execute(text(query), params).mappings().all()
+
+        # --- Lógica de filtrado y conteo ---
+        # Filtramos la lista 'registros' buscando en la columna 'plan' (o 'tipo_alimentacion')
+        total_refrigerios = sum(1 for r in registros if r['plan'] == "REFRIGERIO")
+        total_almuerzos = sum(1 for r in registros if r['plan'] == "ALMUERZO")
+
+        return {
+            "registros": registros,
+            "conteo": {
+                "refrigerio": total_refrigerios,
+                "almuerzo": total_almuerzos
+            }
+        }
+
     except Exception as e:
         logger.error(f"Error al obtener registros del día: {e}")
         raise
