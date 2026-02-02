@@ -3,8 +3,6 @@ import { estudiantesService } from "../api/estudiantes.service.js";
 async function cargarTablaEstudiantes({ filtros = null } = {}) {
     try {
         let response;
-
-        // 🧠 Decidir qué endpoint usar
         if (!filtros) {
             response = await estudiantesService.obtenerConPlan();
         } else {
@@ -13,15 +11,10 @@ async function cargarTablaEstudiantes({ filtros = null } = {}) {
 
         const tbody = document.getElementById("cuerpodeestudiantes");
         tbody.innerHTML = "";
-
         const data = response?.data || [];
 
         if (data.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center">No se encontraron resultados</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center">No se encontraron resultados</td></tr>`;
             return;
         }
 
@@ -36,9 +29,7 @@ async function cargarTablaEstudiantes({ filtros = null } = {}) {
                 </tr>
             `;
         });
-
         tbody.innerHTML = filas;
-
     } catch (error) {
         console.error("❌ Error cargando estudiantes:", error);
     }
@@ -52,26 +43,41 @@ async function init() {
     const inputGrado = document.getElementById("grado");
     const btnBuscar = document.getElementById("btnBuscar");
 
-    // 🔹 AL CARGAR → todos los que tienen plan
-    await cargarTablaEstudiantes();
-
-    btnBuscar.addEventListener("click", async (e) => {
-        e.preventDefault();
-
+    // --- FUNCIÓN DE BÚSQUEDA ---
+    const ejecutarBusqueda = async () => {
         const filtros = {
             nombre: inputNombre.value.trim() || null,
             codigo_estudiante: inputCodigo.value.trim() || null,
             grado: inputGrado?.value.trim() || null
         };
 
-        // 🧠 Si no hay filtros → volver a todos
         if (!filtros.nombre && !filtros.codigo_estudiante && !filtros.grado) {
             await cargarTablaEstudiantes();
-            return;
+        } else {
+            await cargarTablaEstudiantes({ filtros });
         }
+    };
 
-        // 🔍 Buscar con filtros
-        await cargarTablaEstudiantes({ filtros });
+    // 🔹 AL CARGAR → todos los que tienen plan
+    await cargarTablaEstudiantes();
+
+    // 🔹 EVENTO CLICK
+    btnBuscar.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await ejecutarBusqueda();
+    });
+
+    // 🔹 EVENTO ENTER EN INPUTS
+    // Agrupamos los inputs en un array para asignarles el evento a todos de una vez
+    [inputNombre, inputCodigo, inputGrado].forEach(input => {
+        if (input) {
+            input.addEventListener("keypress", async (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault(); // Evita que la página se recargue
+                    await ejecutarBusqueda();
+                }
+            });
+        }
     });
 }
 
