@@ -23,7 +23,24 @@
                     <input type="text" placeholder="Escriba el código..." class="professional-input"
                         id="codigoestudiante">
                 </div>
-                <button class="btn-action btn-blue" id="btnbuscar">BUSCAR</button>
+
+                <div class="search-group">
+                    <label>Nombre del estudiante</label>
+                    <input type="text" placeholder="Ej: Gomez..." class="professional-input" id="nombreestudiante">
+                </div>
+
+                <div class="search-group">
+                    <label>Tipo de Plan</label>
+                    <select class="professional-input" id="selectPlan" style="height: 45px;">
+                        <option value="TODOS">TODOS</option>
+                        <option value="REFRIGERIO">REFRIGERIO</option>
+                        <option value="ALMUERZO">ALMUERZO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="search-row mt-20 justify-content-end">
+                <button class="btn-action btn-blue" id="btnbuscar" style="width: 200px;">BUSCAR</button>
                 <button class="btn-action btn-green" id="btnexcel">DESCARGAR EXCEL</button>
             </div>
 
@@ -43,7 +60,7 @@
                     <th>ESTADO</th>
                 </tr>
             </thead>
-            <tbody id="cuerpodedashboard">   
+            <tbody id="cuerpodedashboard">
             </tbody>
         </table>
     </div>

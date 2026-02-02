@@ -23,6 +23,7 @@ async function cargarTablaTodos() {
     try {
         const estudiantes_info = await fechaService.getStudentsAll();
         const tbody = document.getElementById("cuerpodedashboard");
+        if (!tbody) return;
         tbody.innerHTML = "";
         const data = estudiantes_info?.data || [];
         let filas = "";
@@ -46,9 +47,15 @@ async function cargarTablaFiltrada(filtros) {
     try {
         const estudiantes_info = await fechaService.getRegistersFiltered(filtros);
         const tbody = document.getElementById("cuerpodedashboard");
+        if (!tbody) return;
         tbody.innerHTML = "";
         const data = estudiantes_info?.data || [];
         let filas = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No se encontraron registros con esos filtros</td></tr>`;
+            return;
+        }
 
         for (const registro of data) {
             const estudiante = { ...registro };
@@ -73,55 +80,64 @@ async function init() {
     const inputInicio = document.getElementById("fecha_inicio");
     const inputFin = document.getElementById("fecha_fin");
     const inputCodigo = document.getElementById("codigoestudiante");
+    const inputNombre = document.getElementById("nombreestudiante");
+    const selectPlan = document.getElementById("selectPlan");
 
     const btnBuscar = document.getElementById("btnbuscar");
     const btnExcel = document.getElementById("btnexcel");
     const btnBorrarfecha = document.getElementById("borrarfecha");
 
-    // --- 🔍 FUNCIÓN CENTRALIZADA DE BÚSQUEDA ---
     const ejecutarBusqueda = async () => {
-        const inicio = inputInicio.value || null;
-        const fin = inputFin.value || null;
-        const codigo = inputCodigo.value?.trim() || null;
+        const filtros = {
+            fecha_inicio: inputInicio.value || null,
+            fecha_fin: inputFin.value || null,
+            codigo_estudiante: inputCodigo.value?.trim() || null,
+            nombre: inputNombre.value?.trim() || null,
+            plan: selectPlan.value || "TODOS"
+        };
 
-        if (!inicio && !fin && !codigo) {
+        if (!filtros.fecha_inicio && !filtros.fecha_fin && !filtros.codigo_estudiante && !filtros.nombre && filtros.plan === "TODOS") {
             ultimoFiltro = null;
             await cargarTablaTodos();
         } else {
-            ultimoFiltro = {
-                fecha_inicio: inicio,
-                fecha_fin: fin,
-                codigo_estudiante: codigo
-            };
+            ultimoFiltro = filtros;
             await cargarTablaFiltrada(ultimoFiltro);
         }
     };
 
-    btnBorrarfecha.addEventListener("click", () => {
-        inputInicio.value = "";
-        inputFin.value = "";
-    });
-
-    btnExcel.disabled = false;
+    // --- CARGA INICIAL (Carga todo al entrar) ---
     await cargarTablaTodos();
-    ultimoFiltro = null;
 
-    // 🔹 CLICK EN BOTÓN
-    btnBuscar.addEventListener("click", async (e) => {
-        e.preventDefault();
-        await ejecutarBusqueda();
-    });
+    // --- EVENTO CLICK (Asegurando la ejecución) ---
+    if (btnBuscar) {
+        btnBuscar.addEventListener("click", async (e) => {
+            e.preventDefault();
+            console.log("Buscando por click...");
+            await ejecutarBusqueda();
+        });
+    }
 
-    // 🔹 ENTER EN INPUTS
-    [inputInicio, inputFin, inputCodigo].forEach(input => {
+    // --- EVENTO ENTER ---
+    [inputInicio, inputFin, inputCodigo, inputNombre, selectPlan].forEach(input => {
         if (input) {
             input.addEventListener("keypress", async (e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();
+                    console.log("Buscando por Enter...");
                     await ejecutarBusqueda();
                 }
             });
         }
+    });
+
+    btnBorrarfecha.addEventListener("click", () => {
+        inputInicio.value = "";
+        inputFin.value = "";
+        inputCodigo.value = "";
+        inputNombre.value = "";
+        selectPlan.value = "TODOS";
+        ultimoFiltro = null;
+        cargarTablaTodos();
     });
 
     btnExcel.addEventListener("click", (e) => {

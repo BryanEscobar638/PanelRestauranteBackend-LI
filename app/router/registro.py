@@ -78,24 +78,29 @@ def listar_registros_hoy(
         )
 
 
-@router.get("/filtrar",status_code=status.HTTP_200_OK,
-    summary="Buscador con filtros",
-    description="Permite buscar por fecha, por codigo de estudiante, o por ambos al mismo tiempo")
+@router.get("/filtrar", status_code=status.HTTP_200_OK,
+    summary="Buscador con filtros avanzados",
+    description="Permite filtrar por rango de fechas, código, nombre (aproximado) y tipo de plan.")
 def listar_registros_filtrados(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
     codigo_estudiante: Optional[str] = Query(None, description="Código del estudiante"),
+    nombre: Optional[str] = Query(None, description="Nombre del estudiante (búsqueda aproximada)"),
+    plan: Optional[str] = Query(None, description="Tipo de plan: REFRIGERIO, ALMUERZO o TODOS"),
     db: Session = Depends(get_db)
 ):
     """
-    Filtra registros por rango de fechas, código de estudiante o ambos.
+    Endpoint que integra filtros por fecha, identificación, nombre con soporte de tildes y categoría de alimento.
     """
-    print("🔥 RUTA /filtrar EJECUTADA 🔥")
+    print(f"🔍 Filtrando por: Inicio={fecha_inicio}, Fin={fecha_fin}, Codigo={codigo_estudiante}, Nombre={nombre}, Plan={plan}")
+    
     registros = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
-        codigo_estudiante=codigo_estudiante
+        codigo_estudiante=codigo_estudiante,
+        nombre=nombre,
+        plan=plan
     )
 
     return {
@@ -104,23 +109,28 @@ def listar_registros_filtrados(
     }
 
 
-@router.get("/excel",status_code=status.HTTP_200_OK,
+@router.get("/excel", status_code=status.HTTP_200_OK,
     summary="Descargar con filtros en un excel",
-    description="Permite descargar por fecha, por codigo de estudiante, o por ambos al mismo tiempo")
+    description="Permite descargar registros filtrando por fecha, código, nombre o tipo de plan.")
 def descargar_excel(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
     codigo_estudiante: Optional[str] = Query(None, description="Código del estudiante"),
+    nombre: Optional[str] = Query(None, description="Nombre del estudiante"),
+    plan: Optional[str] = Query(None, description="Tipo de plan (REFRIGERIO/ALMUERZO)"),
     db: Session = Depends(get_db)
 ):
     """
-    Genera un Excel con los registros filtrados opcionalmente por fechas y/o código.
+    Genera un Excel con los registros filtrados aplicando la misma lógica del buscador.
     """
+    # 1. Obtenemos la data usando la función que ya modificamos con los 5 filtros
     data = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
-        codigo_estudiante=codigo_estudiante
+        codigo_estudiante=codigo_estudiante,
+        nombre=nombre,
+        plan=plan
     )
 
     if not data:
@@ -129,7 +139,7 @@ def descargar_excel(
             detail="No hay registros para los filtros indicados"
         )
 
-    # Crear Excel
+    # 2. Crear Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Registros"
@@ -147,13 +157,16 @@ def descargar_excel(
     ws.append(headers)
 
     for row in data:
+        # Aseguramos que la fecha sea un string plano para el Excel si viene como objeto datetime
+        fecha_str = row["fecha_hora"].strftime("%Y-%m-%d %H:%M:%S") if hasattr(row["fecha_hora"], "strftime") else str(row["fecha_hora"])
+        
         ws.append([
             row["id"],
             row["codigo_estudiante"],
             row["nombre"],
             row.get("grado", ""),
             row["tipo_alimentacion"],
-            row["fecha_hora"],
+            fecha_str,
             row["plan"],
             row["estado"]
         ])
@@ -162,12 +175,11 @@ def descargar_excel(
     wb.save(buffer)
     buffer.seek(0)
 
-    # Nombre dinámico del archivo
-    nombre_codigo = codigo_estudiante or "todos"
-    nombre_fecha_inicio = fecha_inicio or "inicio"
-    nombre_fecha_fin = fecha_fin or "fin"
-
-    filename = f"registros_{nombre_codigo}_{nombre_fecha_inicio}_a_{nombre_fecha_fin}.xlsx"
+    # 3. Nombre dinámico del archivo basado en filtros aplicados
+    nombre_busqueda = nombre or codigo_estudiante or "todos"
+    tipo_plan = plan or "todos_los_planes"
+    
+    filename = f"reporte_{nombre_busqueda}_{tipo_plan}.xlsx"
 
     return StreamingResponse(
         buffer,

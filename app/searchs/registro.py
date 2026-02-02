@@ -57,7 +57,9 @@ def get_registers_filtered(
     db: Session,
     fecha_inicio: date = None,
     fecha_fin: date = None,
-    codigo_estudiante: str = None
+    codigo_estudiante: str = None,
+    nombre: str = None,  # Nuevo parámetro
+    plan: str = None     # Nuevo parámetro ("REFRIGERIO", "ALMUERZO" o "TODOS")
 ):
     try:
         base_query = """
@@ -78,16 +80,26 @@ def get_registers_filtered(
         conditions = []
         params = {}
 
-        # Filtrar por fecha
+        # 1. Filtrar por fecha
         if fecha_inicio and fecha_fin:
             conditions.append("DATE(rv.fecha_hora) BETWEEN :fecha_inicio AND :fecha_fin")
             params["fecha_inicio"] = fecha_inicio
             params["fecha_fin"] = fecha_fin
 
-        # Filtrar por código
+        # 2. Filtrar por código
         if codigo_estudiante:
-            conditions.append("rv.codigo_estudiante = :codigo_estudiante")
-            params["codigo_estudiante"] = codigo_estudiante
+            conditions.append("rv.codigo_estudiante LIKE :codigo_estudiante")
+            params["codigo_estudiante"] = f"%{codigo_estudiante}%"
+
+        # 3. Filtrar por nombre (Insensible a acentos y mayúsculas)
+        if nombre:
+            conditions.append("e.nombre COLLATE utf8mb4_general_ci LIKE :nombre")
+            params["nombre"] = f"%{nombre}%"
+
+        # 4. Filtrar por Plan (Select: TODOS, REFRIGERIO, ALMUERZO)
+        if plan and plan.upper() != "TODOS":
+            conditions.append("rv.plan = :plan")
+            params["plan"] = plan.upper()
 
         if conditions:
             base_query += " WHERE " + " AND ".join(conditions)
