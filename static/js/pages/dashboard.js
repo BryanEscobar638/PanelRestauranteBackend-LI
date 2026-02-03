@@ -5,7 +5,7 @@ function CrearFila(data) {
         <tr>
             <td>${data.codigo_estudiante}</td>
             <td>${data.nombre}</td>
-            <td>${data.grado}</td>
+            <td>${data.grado || ""}</td>
             <td>${data.tipo_alimentacion}</td>
             <td>${data.fecha_hora}</td>
             <td>${data.plan}</td>
@@ -15,44 +15,60 @@ function CrearFila(data) {
 }
 
 function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
-    // Extraemos los valores con las nuevas llaves del backend: snack y lunch
-    const snacks = consumoshoy.conteo?.snack ?? 0;
-    const lunchs = consumoshoy.conteo?.lunch ?? 0;
     const totalHoy = consumoshoy.total_estudiantes_hoy ?? 0;
+    const snack = consumoshoy.desglose?.snack || { elementary: 0, highschool: 0, total: 0 };
+    const lunch = consumoshoy.desglose?.lunch || { elementary: 0, highschool: 0, total: 0 };
 
     return `
         <div class="cards-grid">
-            <div class="card-item">
-                <h4>Total Estudiantes</h4>
-                <p class="card-text fs-1 fw-bold" id="totalestudiantes">${totalestudiantes.total_estudiantes || 0}</p>
+            <div class="card shadow-sm border-0 p-3 card-item d-flex flex-column">
+                <h4 class="text-muted small text-uppercase fw-bold text-center mb-0">Total Estudiantes</h4>
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                    <p class="card-text fw-bold mb-0" style="font-size: 3.5rem;" id="totalestudiantes">${totalestudiantes.total_estudiantes || 0}</p>
+                </div>
             </div>
             
-            <div class="card-item">
-                <h4>Planes Activos</h4>
-                <p class="card-text fs-1 fw-bold" id="planesactivos">${planes.total_estudiantes || 0}</p>
+            <div class="card shadow-sm border-0 p-3 card-item d-flex flex-column">
+                <h4 class="text-muted small text-uppercase fw-bold text-center mb-0">Planes Activos</h4>
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                    <p class="card-text fw-bold mb-0" style="font-size: 3.5rem;" id="planesactivos">${planes.total_estudiantes || 0}</p>
+                </div>
             </div>
 
             <div class="card shadow-sm border-0 p-3 card-item">
-                <div class="card-body p-0">
-                    <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy (${totalHoy})</h4>
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary fw-medium">SNACKS</span>
-                        <span class="fs-3 fw-bold text-primary" id="consumosrefrigerio">${snacks}</span>
+                <h4 class="text-muted small text-uppercase fw-bold text-center mb-3">Consumos Hoy (${totalHoy})</h4>
+                <div class="d-flex flex-column justify-content-around h-100">
+                    <div class="text-center">
+                        <div class="d-flex justify-content-around align-items-center">
+                            <span class="text-secondary fw-bold small">SNACKS</span>
+                            <span class="fw-bold text-primary" style="font-size: 2.5rem;">${snack.total}</span>
+                        </div>
+                        <div class="d-flex justify-content-center gap-3">
+                            <small class="text-muted">Elem: <span class="fw-bold">${snack.elementary}</span></small>
+                            <small class="text-muted">High: <span class="fw-bold">${snack.highschool}</span></small>
+                        </div>
                     </div>
 
                     <hr class="my-2 opacity-25">
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-secondary fw-medium">LUNCH</span>
-                        <span class="fs-3 fw-bold text-success" id="consumosalmuerzo">${lunchs}</span>
+                    <div class="text-center">
+                        <div class="d-flex justify-content-around align-items-center">
+                            <span class="text-secondary fw-bold small">LUNCH</span>
+                            <span class="fw-bold text-success" style="font-size: 2.5rem;">${lunch.total}</span>
+                        </div>
+                        <div class="d-flex justify-content-center gap-3">
+                            <small class="text-muted">Elem: <span class="fw-bold">${lunch.elementary}</span></small>
+                            <small class="text-muted">High: <span class="fw-bold">${lunch.highschool}</span></small>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card-item">
-                <h4>Consumos del Mes</h4>
-                <p class="card-text fs-1 fw-bold" id="consumosmes">${consumosmes.total_consumo || 0}</p>
+            <div class="card shadow-sm border-0 p-3 card-item d-flex flex-column">
+                <h4 class="text-muted small text-uppercase fw-bold text-center mb-0">Consumos del Mes</h4>
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                    <p class="card-text fw-bold mb-0" style="font-size: 3.5rem;" id="consumosmes">${consumosmes.total_consumo || 0}</p>
+                </div>
             </div>
         </div>
     `;
@@ -71,28 +87,32 @@ async function init() {
         ]);
 
         let divcartas = document.getElementById("cartas");
-        divcartas.innerHTML = cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes);
+        if (divcartas) {
+            divcartas.innerHTML = cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes);
+        }
 
         const tbody = document.getElementById("cuerpodedashboard");
-        const data = estudiantes_info.data || [];
-        
-        const formatDateTime = (isoString) => {
-            if (!isoString) return "";
-            return isoString.replace("T", " - ").split('.')[0];
-        };
+        if (tbody) {
+            const data = estudiantes_info.data || [];
+            
+            const formatDateTime = (isoString) => {
+                if (!isoString) return "";
+                return isoString.replace("T", " - ").split('.')[0];
+            };
 
-        let filas = "";
-        data.forEach(item => {
-            const estudiante = { ...item };
-            for (const key in estudiante) {
-                if (typeof estudiante[key] === "string" && estudiante[key].includes("T")) {
-                    estudiante[key] = formatDateTime(estudiante[key]);
+            let filas = "";
+            data.forEach(item => {
+                const estudiante = { ...item };
+                for (const key in estudiante) {
+                    if (typeof estudiante[key] === "string" && estudiante[key].includes("T")) {
+                        estudiante[key] = formatDateTime(estudiante[key]);
+                    }
                 }
-            }
-            filas += CrearFila(estudiante);
-        });
+                filas += CrearFila(estudiante);
+            });
 
-        tbody.innerHTML = filas;
+            tbody.innerHTML = filas || `<tr><td colspan="7" class="text-center">No hay registros recientes</td></tr>`;
+        }
 
     } catch (error) {
         console.error("❌ Error inicializando el dashboard:", error);

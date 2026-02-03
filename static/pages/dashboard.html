@@ -4,34 +4,59 @@
 
     <div id="cartas" class="pb-3">
         <div class="cards-grid">
-            <div class="card-item">
-                <h4>Total Estudiantes</h4>
-                <p class="card-text fs-1 fw-bold" id="totalestudiantes"></p>
+            <div class="card shadow-sm border-0 p-3 card-item">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h4 class="text-muted small text-uppercase fw-bold mb-4">Total Estudiantes</h4>
+                    <p class="card-text fs-2 fw-bold mb-0" id="totalestudiantes">0</p>
+                </div>
             </div>
-            <div class="card-item">
-                <h4>Planes Activos</h4>
-                <p class="card-text fs-1 fw-bold" id="planesactivos"></p>
-            </div>
-            <div class="card shadow-sm border-0 p-3">
-                <div class="card-body">
-                    <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy</h4>
 
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary fw-medium">REFRIGERIOS</span>
-                        <span class="fs-3 fw-bold text-primary" id="consumosrefrigerio">0</span>
+            <div class="card shadow-sm border-0 p-3 card-item">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h4 class="text-muted small text-uppercase fw-bold mb-4">Planes Activos</h4>
+                    <p class="card-text fs-2 fw-bold mb-0" id="planesactivos">0</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 p-3 card-item">
+                <div class="card-body">
+                    <h4 class="text-muted small text-uppercase fw-bold mb-4">Consumos Hoy</h4>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary fw-bold small">SNACKS</span>
+                            <span class="fs-2 fw-bold text-primary" id="snack_total">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted" style="font-size: 0.75rem;">Elem: <span class="fw-bold"
+                                    id="snack_elem">0</span></small>
+                            <small class="text-muted" style="font-size: 0.75rem;">High: <span class="fw-bold"
+                                    id="snack_high">0</span></small>
+                        </div>
                     </div>
 
                     <hr class="my-2 opacity-25">
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-secondary fw-medium">ALMUERZO</span>
-                        <span class="fs-3 fw-bold text-success" id="consumosalmuerzo">0</span>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary fw-bold small">ALMUERZOS</span>
+                            <span class="fs-2 fw-bold text-success" id="lunch_total">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted" style="font-size: 0.75rem;">Elem: <span class="fw-bold"
+                                    id="lunch_elem">0</span></small>
+                            <small class="text-muted" style="font-size: 0.75rem;">High: <span class="fw-bold"
+                                    id="lunch_high">0</span></small>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-item">
-                <h4>Consumos del Mes</h4>
-                <p class="card-text fs-1 fw-bold" id="consumosmes"></p>
+
+            <div class="card shadow-sm border-0 p-3 card-item">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h4 class="text-muted small text-uppercase fw-bold mb-4">Consumos del Mes</h4>
+                    <p class="card-text fs-2 fw-bold mb-0" id="consumosmes">0</p>
+                </div>
             </div>
         </div>
     </div>

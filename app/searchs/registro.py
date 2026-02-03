@@ -213,23 +213,40 @@ def count_students_today(db: Session):
     try:
         query = text("""
             SELECT 
-                SUM(CASE WHEN plan = 'SNACK' THEN 1 ELSE 0 END) AS total_snack,
-                SUM(CASE WHEN plan = 'LUNCH' THEN 1 ELSE 0 END) AS total_lunch,
-                COUNT(DISTINCT codigo_estudiante) AS total_unicos
-            FROM cafeteria.registros_validacion
-            WHERE fecha = CURDATE()
+                -- Conteos para SNACK
+                SUM(CASE WHEN rv.plan = 'SNACK' AND CAST(e.grado AS UNSIGNED) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS snack_elementary,
+                SUM(CASE WHEN rv.plan = 'SNACK' AND CAST(e.grado AS UNSIGNED) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS snack_highschool,
+                
+                -- Conteos para LUNCH
+                SUM(CASE WHEN rv.plan = 'LUNCH' AND CAST(e.grado AS UNSIGNED) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS lunch_elementary,
+                SUM(CASE WHEN rv.plan = 'LUNCH' AND CAST(e.grado AS UNSIGNED) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS lunch_highschool,
+                
+                -- Totales generales
+                SUM(CASE WHEN rv.plan = 'SNACK' THEN 1 ELSE 0 END) AS total_snack,
+                SUM(CASE WHEN rv.plan = 'LUNCH' THEN 1 ELSE 0 END) AS total_lunch,
+                COUNT(DISTINCT rv.codigo_estudiante) AS total_unicos
+            FROM cafeteria.registros_validacion rv
+            INNER JOIN cafeteria.estudiantes e ON rv.codigo_estudiante = e.codigo_estudiante
+            WHERE rv.fecha = CURDATE()
         """)
         
         result = db.execute(query).mappings().first()
         
-        # Retornamos un diccionario con los conteos actualizados
         return {
-            "snack": result["total_snack"] or 0,
-            "lunch": result["total_lunch"] or 0,
+            "snack": {
+                "elementary": result["snack_elementary"] or 0,
+                "highschool": result["snack_highschool"] or 0,
+                "total": result["total_snack"] or 0
+            },
+            "lunch": {
+                "elementary": result["lunch_elementary"] or 0,
+                "highschool": result["lunch_highschool"] or 0,
+                "total": result["total_lunch"] or 0
+            },
             "total_estudiantes_hoy": result["total_unicos"] or 0
         }
     except Exception as e:
-        logger.error(f"Error al contar consumos del día: {e}")
+        logger.error(f"Error al contar consumos segmentados: {e}")
         raise
 
 def total_planalimenticio(db: Session):
