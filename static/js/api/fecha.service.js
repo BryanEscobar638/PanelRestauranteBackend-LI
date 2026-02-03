@@ -60,19 +60,27 @@ export const fechaService = {
         // 🔥 Esto dispara la descarga real en el navegador
         window.location.href = url;
     },
-    getStudentsAll: () => {
-        const endpoint = `/registro/all`;
-        
-        // La lógica es mucho más simple ahora, solo llamamos a nuestro cliente central.
-        let respuesta = request(endpoint);
+    getStudentsAll: (page = 1, size = 50) => {
+    // Usamos Template Literals para inyectar los parámetros en la URL
+    const endpoint = `/registro/all?page=${page}&size=${size}`;
+    
+    // Llamamos al cliente central con la URL paginada
+    let respuesta = request(endpoint);
 
-        return respuesta;
+    return respuesta;
     },
     descargarExcelAll: () => {
+        // Asegúrate de que la ruta coincida con el @router del backend
         const url = `/registro/excel/all`;
 
         console.log("⬇️ Descargando Excel COMPLETO:", url);
 
-        window.location.href = url;
+        // Creamos un elemento 'a' invisible para forzar la descarga sin salir de la página actual
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'registros_completos.xlsx'); // Sugiere el nombre del archivo
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 };

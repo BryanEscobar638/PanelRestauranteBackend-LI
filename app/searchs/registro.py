@@ -30,8 +30,21 @@ def get_all_registers(db: Session):
         logger.error(f"Error al obtener registros de estudiantes: {e}")
         raise
 
-def get_all_registers_all(db: Session):
+def get_all_registers_all(db: Session, page: int = 1, size: int = 50):
     try:
+        # 1. Calcular el salto (offset)
+        skip = (page - 1) * size
+
+        # 2. Consulta para contar el total de registros (sin paginar)
+        count_query = text("""
+            SELECT COUNT(*) 
+            FROM cafeteria.registros_validacion rv
+            INNER JOIN cafeteria.estudiantes e 
+                ON rv.codigo_estudiante = e.codigo_estudiante
+        """)
+        total_registros = db.execute(count_query).scalar()
+
+        # 3. Consulta principal con LIMIT y OFFSET
         query = text("""
             SELECT
                 rv.id,
@@ -46,8 +59,19 @@ def get_all_registers_all(db: Session):
             INNER JOIN cafeteria.estudiantes e
                 ON rv.codigo_estudiante = e.codigo_estudiante
             ORDER BY rv.fecha_hora DESC
+            LIMIT :limit OFFSET :offset
         """)
-        return db.execute(query).mappings().all()
+
+        result = db.execute(query, {"limit": size, "offset": skip}).mappings().all()
+
+        # 4. Retornar estructura completa
+        return {
+            "total": total_registros,
+            "page": page,
+            "size": size,
+            "data": result
+        }
+
     except SQLAlchemyError as e:
         logger.error(f"Error al obtener registros de estudiantes: {e}")
         raise

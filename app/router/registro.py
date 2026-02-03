@@ -36,20 +36,27 @@ def listar_estudiantes(db: Session = Depends(get_db)):
 @router.get(
     "/all",
     status_code=status.HTTP_200_OK,
-    summary="Obtener estudiantes",
-    description="Devuelve todos los estudiantes"
+    summary="Obtener estudiantes paginados",
+    description="Devuelve una lista paginada de todos los estudiantes registrados."
 )
-def listar_estudiantes(db: Session = Depends(get_db)):
+def listar_estudiantes(
+    db: Session = Depends(get_db),
+    page: int = 1, # Página por defecto
+    size: int = 50 # Registros por página por defecto
+):
     try:
-        registros = get_all_registers_all(db)
-        return {
-            "total": len(registros),
-            "data": registros
-        }
-    except SQLAlchemyError:
+        # Pasamos los parámetros de paginación a la función del controlador
+        resultado = get_all_registers_all(db, page=page, size=size)
+        
+        # 'resultado' ya es un diccionario que contiene:
+        # {"total": X, "page": Y, "size": Z, "data": [...]}
+        return resultado
+
+    except SQLAlchemyError as e:
+        logger.error(f"Error en endpoint /all: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al obtener los estudiantes"
+            detail="Error al obtener los estudiantes de la base de datos"
         )
 
 @router.get("/hoy",status_code=status.HTTP_200_OK,
@@ -191,61 +198,69 @@ def descargar_excel(
     "/excel/all",
     status_code=status.HTTP_200_OK,
     summary="Descargar todos los registros en Excel",
-    description="Genera un Excel con TODOS los registros sin aplicar filtros"
+    description="Genera un Excel con TODOS los registros sin aplicar filtros ni paginación"
 )
 def descargar_excel_all(
     db: Session = Depends(get_db)
 ):
-    data = get_all_registers_all(db)
+    # IMPORTANTE: Llamamos a la función pero extrayendo solo la lista 'data'
+    # Como queremos TODOS los registros para el Excel, pasamos un tamaño muy grande
+    # o mejor aún, modificamos la llamada para que ignore el límite.
+    
+    try:
+        # Opción 1: Si tu función get_all_registers_all permite omitir el límite, úsalo.
+        # Opción 2: Pasamos un tamaño gigante (ej. 1000000) para asegurar que traiga todo.
+        resultado = get_all_registers_all(db, page=1, size=1000000)
+        registros = resultado["data"] # Extraemos la lista de filas
 
-    if not data:
-        raise HTTPException(
-            status_code=404,
-            detail="No hay registros para exportar"
+        if not registros:
+            raise HTTPException(
+                status_code=404,
+                detail="No hay registros para exportar"
+            )
+
+        # Crear Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Registros"
+
+        headers = [
+            "ID", "Código Estudiante", "Nombre", "Grado", 
+            "Tipo Alimentación", "Fecha Hora", "Plan", "Estado"
+        ]
+        ws.append(headers)
+
+        for row in registros:
+            # Aseguramos el formato de la fecha para el Excel
+            fecha_str = row["fecha_hora"].strftime("%Y-%m-%d %H:%M:%S") if hasattr(row["fecha_hora"], 'strftime') else str(row["fecha_hora"])
+            
+            ws.append([
+                row["id"],
+                row["codigo_estudiante"],
+                row["nombre"],
+                row.get("grado", ""),
+                row["tipo_alimentacion"],
+                fecha_str,
+                row["plan"],
+                row["estado"]
+            ])
+
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        filename = f"registros_completos_{date.today()}.xlsx"
+
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
         )
-
-    # Crear Excel
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Registros"
-
-    headers = [
-        "ID",
-        "Código Estudiante",
-        "Nombre",
-        "Grado",
-        "Tipo Alimentación",
-        "Fecha Hora",
-        "Plan",
-        "Estado"
-    ]
-    ws.append(headers)
-
-    for row in data:
-        ws.append([
-            row["id"],
-            row["codigo_estudiante"],
-            row["nombre"],
-            row.get("grado", ""),
-            row["tipo_alimentacion"],
-            row["fecha_hora"],
-            row["plan"],
-            row["estado"]
-        ])
-
-    buffer = BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-
-    filename = "registros_completos.xlsx"
-
-    return StreamingResponse(
-        buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}"
-        }
-    )
+    except Exception as e:
+        logger.error(f"Error generando Excel: {e}")
+        raise HTTPException(status_code=500, detail="Error al generar el archivo Excel")
 
 @router.get("/total-estudiantes", status_code=status.HTTP_200_OK,
     summary="Obtener todos los estudiantes",

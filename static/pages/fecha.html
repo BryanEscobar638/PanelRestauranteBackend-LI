@@ -63,5 +63,24 @@
             <tbody id="cuerpodedashboard">
             </tbody>
         </table>
+
+        <div class="pagination-container d-flex justify-content-between align-items-center mt-3 p-2">
+        <div class="pagination-info text-muted small">
+            Mostrando <span id="regVisibles">0</span> de <span id="totalRegistros">0</span> registros
+        </div>
+        
+        <div class="pagination-buttons d-flex gap-2">
+            <button id="btnAnterior" class="btn btn-sm btn-outline-primary" disabled>
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            
+            <span class="align-self-center fw-bold mx-2">
+                Página <span id="numPagina">1</span>
+            </span>
+
+            <button id="btnSiguiente" class="btn btn-sm btn-outline-primary">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
     </div>
 </main>
