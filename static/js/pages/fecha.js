@@ -54,7 +54,6 @@ async function actualizarTabla() {
         const data = respuesta?.data || [];
         const total = respuesta?.total || 0;
 
-        // Actualizar indicadores visuales (con validación de existencia)
         const elPagina = document.getElementById("numPagina");
         const elTotal = document.getElementById("totalRegistros");
         const elVisibles = document.getElementById("regVisibles");
@@ -63,7 +62,6 @@ async function actualizarTabla() {
         if (elTotal) elTotal.innerText = total;
         if (elVisibles) elVisibles.innerText = data.length;
 
-        // Control de botones
         if (btnAnt) btnAnt.disabled = paginaActual <= 1;
         if (btnSig) btnSig.disabled = (paginaActual * registrosPorPagina) >= total;
 
@@ -84,7 +82,6 @@ async function actualizarTabla() {
         }
         tbody.innerHTML = filas;
 
-        // --- MEJORA: Volver arriba al cambiar de página ---
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
@@ -99,7 +96,6 @@ async function actualizarTabla() {
 async function init() {
     console.log("✅ dashboard.js cargado correctamente");
 
-    // Referencias
     const btnAnterior = document.getElementById("btnAnterior");
     const btnSiguiente = document.getElementById("btnSiguiente");
     const btnBuscar = document.getElementById("btnbuscar");
@@ -110,29 +106,28 @@ async function init() {
     const inputFin = document.getElementById("fecha_fin");
     const inputCodigo = document.getElementById("codigoestudiante");
     const inputNombre = document.getElementById("nombreestudiante");
+    const inputGrado = document.getElementById("gradoestudiante"); // Capturamos el nuevo input
     const selectPlan = document.getElementById("selectPlan");
 
     const ejecutarBusqueda = async () => {
-        // Capturar valores actuales
         const filtros = {
             fecha_inicio: inputInicio?.value || null,
             fecha_fin: inputFin?.value || null,
             codigo_estudiante: inputCodigo?.value?.trim() || null,
             nombre: inputNombre?.value?.trim() || null,
+            grado: inputGrado?.value?.trim() || null, // Incluimos grado
             plan: selectPlan?.value || "TODOS"
         };
 
-        // Evaluar si realmente hay filtros
         const tieneFiltros = filtros.fecha_inicio || filtros.fecha_fin || 
                             filtros.codigo_estudiante || filtros.nombre || 
-                            filtros.plan !== "TODOS";
+                            filtros.grado || filtros.plan !== "TODOS";
 
         ultimoFiltro = tieneFiltros ? filtros : null;
-        paginaActual = 1; // Siempre resetear a 1 en búsqueda nueva
+        paginaActual = 1; 
         await actualizarTabla();
     };
 
-    // --- ASIGNACIÓN DE EVENTOS ---
     if (btnAnterior) {
         btnAnterior.onclick = async () => {
             if (paginaActual > 1 && !cargando) {
@@ -166,6 +161,7 @@ async function init() {
             if (inputFin) inputFin.value = "";
             if (inputCodigo) inputCodigo.value = "";
             if (inputNombre) inputNombre.value = "";
+            if (inputGrado) inputGrado.value = ""; // Limpiamos grado
             if (selectPlan) selectPlan.value = "TODOS";
             ultimoFiltro = null;
             paginaActual = 1;
@@ -173,8 +169,8 @@ async function init() {
         };
     }
 
-    // Tecla Enter
-    [inputInicio, inputFin, inputCodigo, inputNombre, selectPlan].forEach(input => {
+    // Tecla Enter para todos los inputs, incluido Grado
+    [inputInicio, inputFin, inputCodigo, inputNombre, inputGrado, selectPlan].forEach(input => {
         if (input) {
             input.onkeypress = async (e) => {
                 if (e.key === "Enter") {
@@ -188,12 +184,11 @@ async function init() {
     if (btnExcel) {
         btnExcel.onclick = (e) => {
             e.preventDefault();
-            // Usamos la variable de estado actual para el Excel
+            // El Excel ahora llevará el grado si está en ultimoFiltro
             !ultimoFiltro ? fechaService.descargarExcelAll() : fechaService.descargarExcel(ultimoFiltro);
         };
     }
 
-    // Carga inicial
     await actualizarTabla();
 }
 

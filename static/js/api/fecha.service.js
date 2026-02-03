@@ -7,9 +7,10 @@ export const fechaService = {
         fecha_fin = null,
         codigo_estudiante = null,
         nombre = null,
+        grado = null,    // Nuevo: parámetro de grado
         plan = null,
-        page = 1,   // Nuevo: parámetro de página
-        size = 50   // Nuevo: parámetro de tamaño
+        page = 1,
+        size = 50
     }) => {
         try {
             const params = new URLSearchParams();
@@ -20,23 +21,26 @@ export const fechaService = {
             if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
             if (nombre) params.append("nombre", nombre);
             
+            // --- NUEVO: Filtro por grado ---
+            if (grado) params.append("grado", grado);
+
             if (plan && plan !== "TODOS") {
                 params.append("plan", plan);
             }
 
-            // --- NUEVO: Parámetros de paginación ---
+            // Parámetros de paginación
             params.append("page", page);
             params.append("size", size);
 
             const endpoint = `/registro/filtrar?${params.toString()}`;
 
-            console.log("🔎 Buscando con filtros y paginación:", endpoint);
+            console.log("🔎 Buscando con filtros (incluyendo grado) y paginación:", endpoint);
 
             const respuesta = await request(endpoint);
             return respuesta;
 
         } catch (error) {
-            console.error("❌ Error al obtener registros filtrados:", error);
+            console.error("❌ Error al obtener registros filtrados con grado:", error);
             return null;
         }
     },
@@ -45,6 +49,7 @@ export const fechaService = {
         fecha_fin = null,
         codigo_estudiante = null,
         nombre = null,
+        grado = null, // Nuevo: parámetro de grado
         plan = null
     }) => {
         const params = new URLSearchParams();
@@ -55,19 +60,24 @@ export const fechaService = {
         if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
         if (nombre) params.append("nombre", nombre);
         
+        // --- NUEVO: Filtro por grado ---
+        if (grado) params.append("grado", grado);
+        
         if (plan && plan !== "TODOS") {
             params.append("plan", plan);
         }
 
+        // Construimos la URL apuntando al nuevo endpoint que acepta grado
         const url = `/registro/excel?${params.toString()}`;
 
-        console.log("⬇️ Descargando Excel FILTRADO:", url);
+        console.log("⬇️ Descargando Excel FILTRADO (incluyendo grado):", url);
 
-        // Creamos un link temporal para disparar la descarga sin afectar la navegación
+        // Creamos un link temporal para disparar la descarga
         const link = document.createElement('a');
         link.href = url;
-        // El nombre del archivo lo definirá el servidor, pero esto ayuda al navegador
-        link.setAttribute('download', 'reporte_filtrado.xlsx'); 
+        
+        // El servidor definirá el nombre real, pero esto es una buena práctica
+        link.setAttribute('download', `reporte_filtrado${grado ? '_grado_' + grado : ''}.xlsx`); 
         
         document.body.appendChild(link);
         link.click();

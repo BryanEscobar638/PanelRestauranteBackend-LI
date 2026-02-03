@@ -87,12 +87,13 @@ def listar_registros_hoy(
 
 @router.get("/filtrar", status_code=status.HTTP_200_OK,
     summary="Buscador con filtros avanzados y paginación",
-    description="Permite filtrar por rango de fechas, código, nombre y plan, devolviendo resultados paginados.")
+    description="Permite filtrar por rango de fechas, código, nombre, grado y plan, devolviendo resultados paginados.")
 def listar_registros_filtrados(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
     codigo_estudiante: Optional[str] = Query(None, description="Código del estudiante"),
     nombre: Optional[str] = Query(None, description="Nombre del estudiante (búsqueda aproximada)"),
+    grado: Optional[str] = Query(None, description="Grado del estudiante (ej: 1, 5, 11)"), # <--- Nuevo parámetro
     plan: Optional[str] = Query(None, description="Tipo de plan: REFRIGERIO, ALMUERZO o TODOS"),
     page: int = Query(1, ge=1, description="Número de página"),
     size: int = Query(50, ge=1, le=100, description="Registros por página"),
@@ -101,32 +102,33 @@ def listar_registros_filtrados(
     """
     Endpoint que integra filtros y paginación para optimizar el rendimiento del Dashboard.
     """
-    print(f"🔍 Filtrando Paginado: Inicio={fecha_inicio}, Fin={fecha_fin}, Codigo={codigo_estudiante}, Nombre={nombre}, Plan={plan}, Pagina={page}")
+    print(f"🔍 Filtrando Paginado: Inicio={fecha_inicio}, Fin={fecha_fin}, Codigo={codigo_estudiante}, Nombre={nombre}, Grado={grado}, Plan={plan}, Pagina={page}")
     
-    # Llamamos al controlador pasando los nuevos parámetros de paginación
+    # Llamamos al controlador pasando el nuevo parámetro 'grado'
     resultado = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
         codigo_estudiante=codigo_estudiante,
         nombre=nombre,
+        grado=grado, # <--- Se pasa al controlador
         plan=plan,
         page=page,
         size=size
     )
 
-    # 'resultado' ya contiene { "total": X, "page": Y, "size": Z, "data": [...] }
     return resultado
 
 
 @router.get("/excel", status_code=status.HTTP_200_OK,
     summary="Descargar con filtros en un excel",
-    description="Permite descargar registros filtrando por fecha, código, nombre o tipo de plan.")
+    description="Permite descargar registros filtrando por fecha, código, nombre, grado o tipo de plan.")
 def descargar_excel(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
     codigo_estudiante: Optional[str] = Query(None, description="Código del estudiante"),
     nombre: Optional[str] = Query(None, description="Nombre del estudiante"),
+    grado: Optional[str] = Query(None, description="Grado del estudiante"), # <--- Nuevo parámetro
     plan: Optional[str] = Query(None, description="Tipo de plan (REFRIGERIO/ALMUERZO)"),
     db: Session = Depends(get_db)
 ):
@@ -135,13 +137,14 @@ def descargar_excel(
     pero ignorando el límite de paginación para traer todos los resultados.
     """
     
-    # 1. Llamamos a la función filtrada con un size gigante para el Excel
+    # 1. Llamamos a la función filtrada incluyendo el parámetro 'grado'
     resultado = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
         codigo_estudiante=codigo_estudiante,
         nombre=nombre,
+        grado=grado,  # <--- Pasamos el grado aquí
         plan=plan,
         page=1,
         size=1000000  # Forzamos a que traiga todos los registros para el reporte
@@ -175,7 +178,7 @@ def descargar_excel(
             row["id"],
             row["codigo_estudiante"],
             row["nombre"],
-            row.get("grado", ""),
+            row.get("grado", ""), # Ya lo traemos del SELECT en get_registers_filtered
             row["tipo_alimentacion"],
             fecha_str,
             row["plan"],
@@ -186,9 +189,11 @@ def descargar_excel(
     wb.save(buffer)
     buffer.seek(0)
 
-    # 3. Nombre dinámico del archivo
+    # 3. Nombre dinámico del archivo mejorado
+    # Incluimos el grado en el nombre del archivo si se filtró por uno
+    etiqueta_grado = f"_grado_{grado}" if grado else ""
     nombre_busqueda = (nombre or codigo_estudiante or "reporte").replace(" ", "_")
-    filename = f"reporte_{nombre_busqueda}_{date.today()}.xlsx"
+    filename = f"reporte_{nombre_busqueda}{etiqueta_grado}_{date.today()}.xlsx"
 
     return StreamingResponse(
         buffer,

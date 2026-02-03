@@ -18,18 +18,23 @@
             </div>
 
             <div class="search-row mt-20">
-                <div class="search-group">
+                <div class="search-group" style="flex: 1;">
                     <label>Código estudiante</label>
-                    <input type="text" placeholder="Escriba el código..." class="professional-input"
-                        id="codigoestudiante">
+                    <input type="text" placeholder="Código..." class="professional-input" id="codigoestudiante">
                 </div>
 
-                <div class="search-group">
+                <div class="search-group" style="flex: 2;">
                     <label>Nombre del estudiante</label>
                     <input type="text" placeholder="Ej: Gomez..." class="professional-input" id="nombreestudiante">
                 </div>
 
-                <div class="search-group">
+                <div class="search-group" style="flex: 1;">
+                    <label>Grado</label>
+                    <input type="number" placeholder="Ej: 5" min="1" max="12" class="professional-input"
+                        id="gradoestudiante">
+                </div>
+
+                <div class="search-group" style="flex: 1;">
                     <label>Tipo de Plan</label>
                     <select class="professional-input" id="selectPlan" style="height: 45px;">
                         <option value="TODOS">TODOS</option>
@@ -65,22 +70,22 @@
         </table>
 
         <div class="pagination-container d-flex justify-content-between align-items-center mt-3 p-2">
-        <div class="pagination-info text-muted small">
-            Mostrando <span id="regVisibles">0</span> de <span id="totalRegistros">0</span> registros
-        </div>
-        
-        <div class="pagination-buttons d-flex gap-2">
-            <button id="btnAnterior" class="btn btn-sm btn-outline-primary" disabled>
-                <i class="fas fa-chevron-left"></i> Anterior
-            </button>
-            
-            <span class="align-self-center fw-bold mx-2">
-                Página <span id="numPagina">1</span>
-            </span>
+            <div class="pagination-info text-muted small">
+                Mostrando <span id="regVisibles">0</span> de <span id="totalRegistros">0</span> registros
+            </div>
 
-            <button id="btnSiguiente" class="btn btn-sm btn-outline-primary">
-                Siguiente <i class="fas fa-chevron-right"></i>
-            </button>
+            <div class="pagination-buttons d-flex gap-2">
+                <button id="btnAnterior" class="btn btn-sm btn-outline-primary" disabled>
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </button>
+
+                <span class="align-self-center fw-bold mx-2">
+                    Página <span id="numPagina">1</span>
+                </span>
+
+                <button id="btnSiguiente" class="btn btn-sm btn-outline-primary">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
         </div>
-    </div>
 </main>

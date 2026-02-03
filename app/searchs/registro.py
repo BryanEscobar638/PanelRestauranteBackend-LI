@@ -83,12 +83,12 @@ def get_registers_filtered(
     fecha_fin: date = None,
     codigo_estudiante: str = None,
     nombre: str = None,
+    grado: str = None,  # Nuevo parámetro
     plan: str = None,
-    page: int = 1,      # Parámetro de página
-    size: int = 50      # Registros por página
+    page: int = 1,
+    size: int = 50
 ):
     try:
-        # Calcular el desplazamiento (offset)
         skip = (page - 1) * size
 
         base_query = """
@@ -116,18 +116,21 @@ def get_registers_filtered(
             conditions.append("e.nombre COLLATE utf8mb4_general_ci LIKE :nombre")
             params["nombre"] = f"%{nombre}%"
 
-        # 4. Filtrar por Plan
+        # 4. NUEVO: Filtrar por grado
+        if grado:
+            conditions.append("e.grado = :grado")
+            params["grado"] = grado
+
+        # 5. Filtrar por Plan
         if plan and plan.upper() != "TODOS":
             conditions.append("rv.plan = :plan")
             params["plan"] = plan.upper()
 
-        # Construir el WHERE
         where_clause = ""
         if conditions:
             where_clause = " WHERE " + " AND ".join(conditions)
 
         # --- 1. OBTENER EL TOTAL DE REGISTROS FILTRADOS ---
-        # Esto es vital para que el paginador sepa el límite real
         count_sql = f"SELECT COUNT(*) {base_query} {where_clause}"
         total_registros = db.execute(text(count_sql), params).scalar()
 
@@ -148,13 +151,11 @@ def get_registers_filtered(
             LIMIT :limit OFFSET :offset
         """
         
-        # Agregamos los parámetros de paginación
         params["limit"] = size
         params["offset"] = skip
 
         result = db.execute(text(select_sql), params).mappings().all()
 
-        # Retornamos el formato esperado por el frontend
         return {
             "total": total_registros,
             "page": page,
