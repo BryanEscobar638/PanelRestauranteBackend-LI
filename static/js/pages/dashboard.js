@@ -15,10 +15,9 @@ function CrearFila(data) {
 }
 
 function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
-    // Extraemos los valores del nuevo formato del backend
-    // Estructura esperada: consumoshoy = { total_estudiantes_hoy: X, conteo: { refrigerio: Y, almuerzo: Z } }
-    const refrigerios = consumoshoy.conteo?.refrigerio ?? 0;
-    const almuerzos = consumoshoy.conteo?.almuerzo ?? 0;
+    // Extraemos los valores con las nuevas llaves del backend: snack y lunch
+    const snacks = consumoshoy.conteo?.snack ?? 0;
+    const lunchs = consumoshoy.conteo?.lunch ?? 0;
     const totalHoy = consumoshoy.total_estudiantes_hoy ?? 0;
 
     return `
@@ -38,15 +37,15 @@ function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
                     <h4 class="text-muted small text-uppercase fw-bold mb-3">Consumos Hoy (${totalHoy})</h4>
                     
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary fw-medium">REFRIGERIOS</span>
-                        <span class="fs-3 fw-bold text-primary" id="consumosrefrigerio">${refrigerios}</span>
+                        <span class="text-secondary fw-medium">SNACKS</span>
+                        <span class="fs-3 fw-bold text-primary" id="consumosrefrigerio">${snacks}</span>
                     </div>
 
                     <hr class="my-2 opacity-25">
 
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-secondary fw-medium">ALMUERZO</span>
-                        <span class="fs-3 fw-bold text-success" id="consumosalmuerzo">${almuerzos}</span>
+                        <span class="text-secondary fw-medium">LUNCH</span>
+                        <span class="fs-3 fw-bold text-success" id="consumosalmuerzo">${lunchs}</span>
                     </div>
                 </div>
             </div>
@@ -63,7 +62,6 @@ async function init() {
     console.log("✅ dashboard.js cargado correctamente");
 
     try {
-        // Llamadas en paralelo para mejorar la velocidad de carga
         const [totalestudiantes, consumoshoy, planes, consumosmes, estudiantes_info] = await Promise.all([
             dashboardService.getTotalEstudiantes(),
             dashboardService.getConsumidoresHoy(),
@@ -80,7 +78,7 @@ async function init() {
         
         const formatDateTime = (isoString) => {
             if (!isoString) return "";
-            return isoString.replace("T", " - ").split('.')[0]; // Quitamos milisegundos si existen
+            return isoString.replace("T", " - ").split('.')[0];
         };
 
         let filas = "";

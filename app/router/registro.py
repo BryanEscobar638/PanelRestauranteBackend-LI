@@ -261,19 +261,19 @@ def obtener_total_estudiantes(db: Session = Depends(get_db)):
         )
 
 @router.get("/total-estudiantes-hoy", status_code=status.HTTP_200_OK,
-    summary="Obtiene el desglose de consumos del día por tipo (Refrigerio/Almuerzo)",
-    description="Retorna el conteo de refrigerios, almuerzos y el total de estudiantes únicos del día.")
+    summary="Obtiene el desglose de consumos del día por tipo (SNACK/LUNCH)",
+    description="Retorna el conteo de snacks, lunchs y el total de estudiantes únicos del día.")
 def obtener_total_estudiantes_hoy(db: Session = Depends(get_db)):
     try:
-        # 'conteo' ahora es un diccionario: {"refrigerio": X, "almuerzo": Y, "total_estudiantes_hoy": Z}
+        # 'conteo' ahora es un diccionario: {"snack": X, "lunch": Y, "total_estudiantes_hoy": Z}
         conteo = count_students_today(db)
         
-        # Retornamos el diccionario completo para que el frontend pueda acceder a cada valor
+        # Retornamos el diccionario con los términos actualizados
         return {
             "total_estudiantes_hoy": conteo["total_estudiantes_hoy"],
             "conteo": {
-                "refrigerio": conteo["refrigerio"],
-                "almuerzo": conteo["almuerzo"]
+                "snack": conteo["snack"],
+                "lunch": conteo["lunch"]
             }
         }
     except Exception as e:

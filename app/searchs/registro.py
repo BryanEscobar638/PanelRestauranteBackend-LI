@@ -160,8 +160,8 @@ def count_students_today(db: Session):
     try:
         query = text("""
             SELECT 
-                SUM(CASE WHEN plan = 'REFRIGERIO' THEN 1 ELSE 0 END) AS total_refrigerio,
-                SUM(CASE WHEN plan = 'ALMUERZO' THEN 1 ELSE 0 END) AS total_almuerzo,
+                SUM(CASE WHEN plan = 'SNACK' THEN 1 ELSE 0 END) AS total_snack,
+                SUM(CASE WHEN plan = 'LUNCH' THEN 1 ELSE 0 END) AS total_lunch,
                 COUNT(DISTINCT codigo_estudiante) AS total_unicos
             FROM cafeteria.registros_validacion
             WHERE fecha = CURDATE()
@@ -169,10 +169,10 @@ def count_students_today(db: Session):
         
         result = db.execute(query).mappings().first()
         
-        # Retornamos un diccionario con los conteos
+        # Retornamos un diccionario con los conteos actualizados
         return {
-            "refrigerio": result["total_refrigerio"] or 0,
-            "almuerzo": result["total_almuerzo"] or 0,
+            "snack": result["total_snack"] or 0,
+            "lunch": result["total_lunch"] or 0,
             "total_estudiantes_hoy": result["total_unicos"] or 0
         }
     except Exception as e:
