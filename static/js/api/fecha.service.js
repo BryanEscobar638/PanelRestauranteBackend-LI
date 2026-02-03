@@ -6,25 +6,31 @@ export const fechaService = {
         fecha_inicio = null,
         fecha_fin = null,
         codigo_estudiante = null,
-        nombre = null, // Nuevo parámetro
-        plan = null    // Nuevo parámetro
+        nombre = null,
+        plan = null,
+        page = 1,   // Nuevo: parámetro de página
+        size = 50   // Nuevo: parámetro de tamaño
     }) => {
         try {
             const params = new URLSearchParams();
 
+            // Filtros básicos
             if (fecha_inicio) params.append("fecha_inicio", fecha_inicio);
             if (fecha_fin) params.append("fecha_fin", fecha_fin);
             if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
             if (nombre) params.append("nombre", nombre);
             
-            // Solo enviamos el plan si es distinto a "TODOS" para limpiar la URL
             if (plan && plan !== "TODOS") {
                 params.append("plan", plan);
             }
 
+            // --- NUEVO: Parámetros de paginación ---
+            params.append("page", page);
+            params.append("size", size);
+
             const endpoint = `/registro/filtrar?${params.toString()}`;
 
-            console.log("🔎 Endpoint con filtros avanzados:", endpoint);
+            console.log("🔎 Buscando con filtros y paginación:", endpoint);
 
             const respuesta = await request(endpoint);
             return respuesta;
@@ -38,27 +44,34 @@ export const fechaService = {
         fecha_inicio = null,
         fecha_fin = null,
         codigo_estudiante = null,
-        nombre = null, // Nuevo
-        plan = null    // Nuevo
+        nombre = null,
+        plan = null
     }) => {
         const params = new URLSearchParams();
 
+        // Agregamos los filtros a la URL
         if (fecha_inicio) params.append("fecha_inicio", fecha_inicio);
         if (fecha_fin) params.append("fecha_fin", fecha_fin);
         if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
         if (nombre) params.append("nombre", nombre);
         
-        // Solo enviamos el plan si es distinto a "TODOS"
         if (plan && plan !== "TODOS") {
             params.append("plan", plan);
         }
 
         const url = `/registro/excel?${params.toString()}`;
 
-        console.log("⬇️ Descargando Excel con filtros avanzados:", url);
+        console.log("⬇️ Descargando Excel FILTRADO:", url);
 
-        // 🔥 Esto dispara la descarga real en el navegador
-        window.location.href = url;
+        // Creamos un link temporal para disparar la descarga sin afectar la navegación
+        const link = document.createElement('a');
+        link.href = url;
+        // El nombre del archivo lo definirá el servidor, pero esto ayuda al navegador
+        link.setAttribute('download', 'reporte_filtrado.xlsx'); 
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     },
     getStudentsAll: (page = 1, size = 50) => {
     // Usamos Template Literals para inyectar los parámetros en la URL

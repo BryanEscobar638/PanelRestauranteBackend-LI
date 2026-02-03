@@ -86,34 +86,37 @@ def listar_registros_hoy(
 
 
 @router.get("/filtrar", status_code=status.HTTP_200_OK,
-    summary="Buscador con filtros avanzados",
-    description="Permite filtrar por rango de fechas, código, nombre (aproximado) y tipo de plan.")
+    summary="Buscador con filtros avanzados y paginación",
+    description="Permite filtrar por rango de fechas, código, nombre y plan, devolviendo resultados paginados.")
 def listar_registros_filtrados(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
     codigo_estudiante: Optional[str] = Query(None, description="Código del estudiante"),
     nombre: Optional[str] = Query(None, description="Nombre del estudiante (búsqueda aproximada)"),
     plan: Optional[str] = Query(None, description="Tipo de plan: REFRIGERIO, ALMUERZO o TODOS"),
+    page: int = Query(1, ge=1, description="Número de página"),
+    size: int = Query(50, ge=1, le=100, description="Registros por página"),
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint que integra filtros por fecha, identificación, nombre con soporte de tildes y categoría de alimento.
+    Endpoint que integra filtros y paginación para optimizar el rendimiento del Dashboard.
     """
-    print(f"🔍 Filtrando por: Inicio={fecha_inicio}, Fin={fecha_fin}, Codigo={codigo_estudiante}, Nombre={nombre}, Plan={plan}")
+    print(f"🔍 Filtrando Paginado: Inicio={fecha_inicio}, Fin={fecha_fin}, Codigo={codigo_estudiante}, Nombre={nombre}, Plan={plan}, Pagina={page}")
     
-    registros = get_registers_filtered(
+    # Llamamos al controlador pasando los nuevos parámetros de paginación
+    resultado = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
         codigo_estudiante=codigo_estudiante,
         nombre=nombre,
-        plan=plan
+        plan=plan,
+        page=page,
+        size=size
     )
 
-    return {
-        "total": len(registros),
-        "data": registros
-    }
+    # 'resultado' ya contiene { "total": X, "page": Y, "size": Z, "data": [...] }
+    return resultado
 
 
 @router.get("/excel", status_code=status.HTTP_200_OK,
@@ -128,19 +131,26 @@ def descargar_excel(
     db: Session = Depends(get_db)
 ):
     """
-    Genera un Excel con los registros filtrados aplicando la misma lógica del buscador.
+    Genera un Excel con los registros filtrados aplicando la misma lógica del buscador,
+    pero ignorando el límite de paginación para traer todos los resultados.
     """
-    # 1. Obtenemos la data usando la función que ya modificamos con los 5 filtros
-    data = get_registers_filtered(
+    
+    # 1. Llamamos a la función filtrada con un size gigante para el Excel
+    resultado = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
         codigo_estudiante=codigo_estudiante,
         nombre=nombre,
-        plan=plan
+        plan=plan,
+        page=1,
+        size=1000000  # Forzamos a que traiga todos los registros para el reporte
     )
 
-    if not data:
+    # Extraemos la lista de la llave 'data'
+    registros = resultado.get("data", [])
+
+    if not registros:
         raise HTTPException(
             status_code=404,
             detail="No hay registros para los filtros indicados"
@@ -149,22 +159,16 @@ def descargar_excel(
     # 2. Crear Excel
     wb = Workbook()
     ws = wb.active
-    ws.title = "Registros"
+    ws.title = "Registros Filtrados"
 
     headers = [
-        "ID",
-        "Código Estudiante",
-        "Nombre",
-        "Grado",
-        "Tipo Alimentación",
-        "Fecha Hora",
-        "Plan",
-        "Estado"
+        "ID", "Código Estudiante", "Nombre", "Grado", 
+        "Tipo Alimentación", "Fecha Hora", "Plan", "Estado"
     ]
     ws.append(headers)
 
-    for row in data:
-        # Aseguramos que la fecha sea un string plano para el Excel si viene como objeto datetime
+    for row in registros:
+        # Formateo de fecha para que sea legible en Excel
         fecha_str = row["fecha_hora"].strftime("%Y-%m-%d %H:%M:%S") if hasattr(row["fecha_hora"], "strftime") else str(row["fecha_hora"])
         
         ws.append([
@@ -182,11 +186,9 @@ def descargar_excel(
     wb.save(buffer)
     buffer.seek(0)
 
-    # 3. Nombre dinámico del archivo basado en filtros aplicados
-    nombre_busqueda = nombre or codigo_estudiante or "todos"
-    tipo_plan = plan or "todos_los_planes"
-    
-    filename = f"reporte_{nombre_busqueda}_{tipo_plan}.xlsx"
+    # 3. Nombre dinámico del archivo
+    nombre_busqueda = (nombre or codigo_estudiante or "reporte").replace(" ", "_")
+    filename = f"reporte_{nombre_busqueda}_{date.today()}.xlsx"
 
     return StreamingResponse(
         buffer,

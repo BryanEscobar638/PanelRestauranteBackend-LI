@@ -82,20 +82,16 @@ def get_registers_filtered(
     fecha_inicio: date = None,
     fecha_fin: date = None,
     codigo_estudiante: str = None,
-    nombre: str = None,  # Nuevo parámetro
-    plan: str = None     # Nuevo parámetro ("REFRIGERIO", "ALMUERZO" o "TODOS")
+    nombre: str = None,
+    plan: str = None,
+    page: int = 1,      # Parámetro de página
+    size: int = 50      # Registros por página
 ):
     try:
+        # Calcular el desplazamiento (offset)
+        skip = (page - 1) * size
+
         base_query = """
-            SELECT
-                rv.id,
-                rv.codigo_estudiante,
-                e.nombre,
-                e.grado,
-                e.tipo_alimentacion,
-                rv.fecha_hora,
-                rv.plan,
-                rv.estado
             FROM cafeteria.registros_validacion rv
             INNER JOIN cafeteria.estudiantes e
                 ON rv.codigo_estudiante = e.codigo_estudiante
@@ -115,23 +111,56 @@ def get_registers_filtered(
             conditions.append("rv.codigo_estudiante LIKE :codigo_estudiante")
             params["codigo_estudiante"] = f"%{codigo_estudiante}%"
 
-        # 3. Filtrar por nombre (Insensible a acentos y mayúsculas)
+        # 3. Filtrar por nombre
         if nombre:
             conditions.append("e.nombre COLLATE utf8mb4_general_ci LIKE :nombre")
             params["nombre"] = f"%{nombre}%"
 
-        # 4. Filtrar por Plan (Select: TODOS, REFRIGERIO, ALMUERZO)
+        # 4. Filtrar por Plan
         if plan and plan.upper() != "TODOS":
             conditions.append("rv.plan = :plan")
             params["plan"] = plan.upper()
 
+        # Construir el WHERE
+        where_clause = ""
         if conditions:
-            base_query += " WHERE " + " AND ".join(conditions)
+            where_clause = " WHERE " + " AND ".join(conditions)
 
-        base_query += " ORDER BY rv.fecha_hora DESC"
+        # --- 1. OBTENER EL TOTAL DE REGISTROS FILTRADOS ---
+        # Esto es vital para que el paginador sepa el límite real
+        count_sql = f"SELECT COUNT(*) {base_query} {where_clause}"
+        total_registros = db.execute(text(count_sql), params).scalar()
 
-        result = db.execute(text(base_query), params).mappings().all()
-        return result
+        # --- 2. OBTENER LOS DATOS PAGINADOS ---
+        select_sql = f"""
+            SELECT
+                rv.id,
+                rv.codigo_estudiante,
+                e.nombre,
+                e.grado,
+                e.tipo_alimentacion,
+                rv.fecha_hora,
+                rv.plan,
+                rv.estado
+            {base_query}
+            {where_clause}
+            ORDER BY rv.fecha_hora DESC
+            LIMIT :limit OFFSET :offset
+        """
+        
+        # Agregamos los parámetros de paginación
+        params["limit"] = size
+        params["offset"] = skip
+
+        result = db.execute(text(select_sql), params).mappings().all()
+
+        # Retornamos el formato esperado por el frontend
+        return {
+            "total": total_registros,
+            "page": page,
+            "size": size,
+            "data": result
+        }
 
     except Exception as e:
         logger.error(f"Error al filtrar registros: {e}")

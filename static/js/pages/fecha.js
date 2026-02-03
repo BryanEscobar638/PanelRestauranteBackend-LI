@@ -54,9 +54,14 @@ async function actualizarTabla() {
         const data = respuesta?.data || [];
         const total = respuesta?.total || 0;
 
-        document.getElementById("numPagina").innerText = paginaActual;
-        document.getElementById("totalRegistros").innerText = total;
-        document.getElementById("regVisibles").innerText = data.length;
+        // Actualizar indicadores visuales (con validación de existencia)
+        const elPagina = document.getElementById("numPagina");
+        const elTotal = document.getElementById("totalRegistros");
+        const elVisibles = document.getElementById("regVisibles");
+
+        if (elPagina) elPagina.innerText = paginaActual;
+        if (elTotal) elTotal.innerText = total;
+        if (elVisibles) elVisibles.innerText = data.length;
 
         // Control de botones
         if (btnAnt) btnAnt.disabled = paginaActual <= 1;
@@ -79,8 +84,13 @@ async function actualizarTabla() {
         }
         tbody.innerHTML = filas;
 
+        // --- MEJORA: Volver arriba al cambiar de página ---
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } catch (error) {
         console.error("❌ Error al actualizar la tabla:", error);
+        const tbody = document.getElementById("cuerpodedashboard");
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error al cargar datos</td></tr>`;
     } finally {
         cargando = false;
     }
@@ -89,13 +99,13 @@ async function actualizarTabla() {
 async function init() {
     console.log("✅ dashboard.js cargado correctamente");
 
+    // Referencias
     const btnAnterior = document.getElementById("btnAnterior");
     const btnSiguiente = document.getElementById("btnSiguiente");
     const btnBuscar = document.getElementById("btnbuscar");
     const btnBorrar = document.getElementById("borrarfecha");
     const btnExcel = document.getElementById("btnexcel");
 
-    // Inputs
     const inputInicio = document.getElementById("fecha_inicio");
     const inputFin = document.getElementById("fecha_fin");
     const inputCodigo = document.getElementById("codigoestudiante");
@@ -103,24 +113,26 @@ async function init() {
     const selectPlan = document.getElementById("selectPlan");
 
     const ejecutarBusqueda = async () => {
-        ultimoFiltro = {
-            fecha_inicio: inputInicio.value || null,
-            fecha_fin: inputFin.value || null,
-            codigo_estudiante: inputCodigo.value?.trim() || null,
-            nombre: inputNombre.value?.trim() || null,
-            plan: selectPlan.value || "TODOS"
+        // Capturar valores actuales
+        const filtros = {
+            fecha_inicio: inputInicio?.value || null,
+            fecha_fin: inputFin?.value || null,
+            codigo_estudiante: inputCodigo?.value?.trim() || null,
+            nombre: inputNombre?.value?.trim() || null,
+            plan: selectPlan?.value || "TODOS"
         };
 
-        // Si no hay nada filtrado, limpiar el objeto para usar getStudentsAll
-        if (!ultimoFiltro.fecha_inicio && !ultimoFiltro.fecha_fin && !ultimoFiltro.codigo_estudiante && !ultimoFiltro.nombre && ultimoFiltro.plan === "TODOS") {
-            ultimoFiltro = null;
-        }
+        // Evaluar si realmente hay filtros
+        const tieneFiltros = filtros.fecha_inicio || filtros.fecha_fin || 
+                            filtros.codigo_estudiante || filtros.nombre || 
+                            filtros.plan !== "TODOS";
 
-        paginaActual = 1;
+        ultimoFiltro = tieneFiltros ? filtros : null;
+        paginaActual = 1; // Siempre resetear a 1 en búsqueda nueva
         await actualizarTabla();
     };
 
-    // --- EVENTOS USANDO .ONCLICK PARA EVITAR DUPLICADOS ---
+    // --- ASIGNACIÓN DE EVENTOS ---
     if (btnAnterior) {
         btnAnterior.onclick = async () => {
             if (paginaActual > 1 && !cargando) {
@@ -132,7 +144,8 @@ async function init() {
 
     if (btnSiguiente) {
         btnSiguiente.onclick = async () => {
-            const total = parseInt(document.getElementById("totalRegistros").innerText) || 0;
+            const elTotal = document.getElementById("totalRegistros");
+            const total = parseInt(elTotal?.innerText) || 0;
             if ((paginaActual * registrosPorPagina) < total && !cargando) {
                 paginaActual++;
                 await actualizarTabla();
@@ -149,15 +162,18 @@ async function init() {
 
     if (btnBorrar) {
         btnBorrar.onclick = async () => {
-            [inputInicio, inputFin, inputCodigo, inputNombre].forEach(i => i.value = "");
-            selectPlan.value = "TODOS";
+            if (inputInicio) inputInicio.value = "";
+            if (inputFin) inputFin.value = "";
+            if (inputCodigo) inputCodigo.value = "";
+            if (inputNombre) inputNombre.value = "";
+            if (selectPlan) selectPlan.value = "TODOS";
             ultimoFiltro = null;
             paginaActual = 1;
             await actualizarTabla();
         };
     }
 
-    // Enter en inputs
+    // Tecla Enter
     [inputInicio, inputFin, inputCodigo, inputNombre, selectPlan].forEach(input => {
         if (input) {
             input.onkeypress = async (e) => {
@@ -172,11 +188,12 @@ async function init() {
     if (btnExcel) {
         btnExcel.onclick = (e) => {
             e.preventDefault();
+            // Usamos la variable de estado actual para el Excel
             !ultimoFiltro ? fechaService.descargarExcelAll() : fechaService.descargarExcel(ultimoFiltro);
         };
     }
 
-    // CARGA INICIAL
+    // Carga inicial
     await actualizarTabla();
 }
 
