@@ -220,21 +220,22 @@ def count_students_today(db: Session):
     try:
         query = text("""
             SELECT 
-                -- Conteos para SNACK
+                -- Conteos para SNACK (Solo validados)
                 SUM(CASE WHEN rv.plan = 'SNACK' AND CAST(e.grado AS UNSIGNED) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS snack_elementary,
                 SUM(CASE WHEN rv.plan = 'SNACK' AND CAST(e.grado AS UNSIGNED) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS snack_highschool,
                 
-                -- Conteos para LUNCH
+                -- Conteos para LUNCH (Solo validados)
                 SUM(CASE WHEN rv.plan = 'LUNCH' AND CAST(e.grado AS UNSIGNED) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS lunch_elementary,
                 SUM(CASE WHEN rv.plan = 'LUNCH' AND CAST(e.grado AS UNSIGNED) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS lunch_highschool,
                 
-                -- Totales generales
+                -- Totales generales (Solo validados)
                 SUM(CASE WHEN rv.plan = 'SNACK' THEN 1 ELSE 0 END) AS total_snack,
                 SUM(CASE WHEN rv.plan = 'LUNCH' THEN 1 ELSE 0 END) AS total_lunch,
                 COUNT(DISTINCT rv.codigo_estudiante) AS total_unicos
             FROM cafeteria.registros_validacion rv
             INNER JOIN cafeteria.estudiantes e ON rv.codigo_estudiante = e.codigo_estudiante
             WHERE rv.fecha = CURDATE()
+              AND rv.estado = 'VALIDADO' -- <--- Filtro crítico agregado
         """)
         
         result = db.execute(query).mappings().first()
