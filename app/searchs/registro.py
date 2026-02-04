@@ -83,8 +83,9 @@ def get_registers_filtered(
     fecha_fin: date = None,
     codigo_estudiante: str = None,
     nombre: str = None,
-    grado: str = None,  # Nuevo parámetro
+    grado: str = None,
     plan: str = None,
+    estado: str = None,  # Nuevo parámetro añadido
     page: int = 1,
     size: int = 50
 ):
@@ -116,7 +117,7 @@ def get_registers_filtered(
             conditions.append("e.nombre COLLATE utf8mb4_general_ci LIKE :nombre")
             params["nombre"] = f"%{nombre}%"
 
-        # 4. NUEVO: Filtrar por grado
+        # 4. Filtrar por grado
         if grado:
             conditions.append("e.grado = :grado")
             params["grado"] = grado
@@ -125,6 +126,11 @@ def get_registers_filtered(
         if plan and plan.upper() != "TODOS":
             conditions.append("rv.plan = :plan")
             params["plan"] = plan.upper()
+
+        # 6. NUEVO: Filtrar por Estado (Validado o No Registrado)
+        if estado and estado.upper() != "TODOS":
+            conditions.append("rv.estado = :estado")
+            params["estado"] = estado.upper()
 
         where_clause = ""
         if conditions:

@@ -7,8 +7,9 @@ export const fechaService = {
         fecha_fin = null,
         codigo_estudiante = null,
         nombre = null,
-        grado = null,    // Nuevo: parámetro de grado
+        grado = null,
         plan = null,
+        estado = null,    // Nuevo: parámetro de estado
         page = 1,
         size = 50
     }) => {
@@ -20,9 +21,12 @@ export const fechaService = {
             if (fecha_fin) params.append("fecha_fin", fecha_fin);
             if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
             if (nombre) params.append("nombre", nombre);
-            
-            // --- NUEVO: Filtro por grado ---
             if (grado) params.append("grado", grado);
+
+            // --- NUEVO: Filtro por estado ---
+            if (estado && estado !== "TODOS") {
+                params.append("estado", estado);
+            }
 
             if (plan && plan !== "TODOS") {
                 params.append("plan", plan);
@@ -34,13 +38,13 @@ export const fechaService = {
 
             const endpoint = `/registro/filtrar?${params.toString()}`;
 
-            console.log("🔎 Buscando con filtros (incluyendo grado) y paginación:", endpoint);
+            console.log("🔎 Buscando con filtros (incluyendo estado) y paginación:", endpoint);
 
             const respuesta = await request(endpoint);
             return respuesta;
 
         } catch (error) {
-            console.error("❌ Error al obtener registros filtrados con grado:", error);
+            console.error("❌ Error al obtener registros filtrados con estado:", error);
             return null;
         }
     },
@@ -49,8 +53,9 @@ export const fechaService = {
         fecha_fin = null,
         codigo_estudiante = null,
         nombre = null,
-        grado = null, // Nuevo: parámetro de grado
-        plan = null
+        grado = null,
+        plan = null,
+        estado = null // Nuevo: parámetro de estado
     }) => {
         const params = new URLSearchParams();
 
@@ -59,25 +64,29 @@ export const fechaService = {
         if (fecha_fin) params.append("fecha_fin", fecha_fin);
         if (codigo_estudiante) params.append("codigo_estudiante", codigo_estudiante);
         if (nombre) params.append("nombre", nombre);
-        
-        // --- NUEVO: Filtro por grado ---
         if (grado) params.append("grado", grado);
+        
+        // --- NUEVO: Filtro por estado ---
+        if (estado && estado !== "TODOS") {
+            params.append("estado", estado);
+        }
         
         if (plan && plan !== "TODOS") {
             params.append("plan", plan);
         }
 
-        // Construimos la URL apuntando al nuevo endpoint que acepta grado
+        // Construimos la URL
         const url = `/registro/excel?${params.toString()}`;
 
-        console.log("⬇️ Descargando Excel FILTRADO (incluyendo grado):", url);
+        console.log("⬇️ Descargando Excel FILTRADO (incluyendo estado):", url);
 
         // Creamos un link temporal para disparar la descarga
         const link = document.createElement('a');
         link.href = url;
         
-        // El servidor definirá el nombre real, pero esto es una buena práctica
-        link.setAttribute('download', `reporte_filtrado${grado ? '_grado_' + grado : ''}.xlsx`); 
+        // El nombre dinámico para el link de descarga (opcional, el servidor manda el suyo)
+        const etiquetaEstado = estado && estado !== "TODOS" ? `_${estado.toLowerCase()}` : '';
+        link.setAttribute('download', `reporte_filtrado${etiquetaEstado}.xlsx`); 
         
         document.body.appendChild(link);
         link.click();

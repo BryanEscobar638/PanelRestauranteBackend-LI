@@ -106,8 +106,9 @@ async function init() {
     const inputFin = document.getElementById("fecha_fin");
     const inputCodigo = document.getElementById("codigoestudiante");
     const inputNombre = document.getElementById("nombreestudiante");
-    const inputGrado = document.getElementById("gradoestudiante"); // Capturamos el nuevo input
+    const inputGrado = document.getElementById("gradoestudiante");
     const selectPlan = document.getElementById("selectPlan");
+    const selectEstado = document.getElementById("selectEstado"); // <--- Capturamos el nuevo select
 
     const ejecutarBusqueda = async () => {
         const filtros = {
@@ -115,13 +116,15 @@ async function init() {
             fecha_fin: inputFin?.value || null,
             codigo_estudiante: inputCodigo?.value?.trim() || null,
             nombre: inputNombre?.value?.trim() || null,
-            grado: inputGrado?.value?.trim() || null, // Incluimos grado
-            plan: selectPlan?.value || "TODOS"
+            grado: inputGrado?.value?.trim() || null,
+            plan: selectPlan?.value || "TODOS",
+            estado: selectEstado?.value || "TODOS" // <--- Incluimos estado
         };
 
         const tieneFiltros = filtros.fecha_inicio || filtros.fecha_fin || 
                             filtros.codigo_estudiante || filtros.nombre || 
-                            filtros.grado || filtros.plan !== "TODOS";
+                            filtros.grado || filtros.plan !== "TODOS" ||
+                            filtros.estado !== "TODOS"; // <--- Verificamos filtro de estado
 
         ultimoFiltro = tieneFiltros ? filtros : null;
         paginaActual = 1; 
@@ -161,16 +164,17 @@ async function init() {
             if (inputFin) inputFin.value = "";
             if (inputCodigo) inputCodigo.value = "";
             if (inputNombre) inputNombre.value = "";
-            if (inputGrado) inputGrado.value = ""; // Limpiamos grado
+            if (inputGrado) inputGrado.value = "";
             if (selectPlan) selectPlan.value = "TODOS";
+            if (selectEstado) selectEstado.value = "TODOS"; // <--- Limpiamos estado
             ultimoFiltro = null;
             paginaActual = 1;
             await actualizarTabla();
         };
     }
 
-    // Tecla Enter para todos los inputs, incluido Grado
-    [inputInicio, inputFin, inputCodigo, inputNombre, inputGrado, selectPlan].forEach(input => {
+    // Tecla Enter para todos los inputs y selects, incluido Estado
+    [inputInicio, inputFin, inputCodigo, inputNombre, inputGrado, selectPlan, selectEstado].forEach(input => {
         if (input) {
             input.onkeypress = async (e) => {
                 if (e.key === "Enter") {
@@ -184,7 +188,7 @@ async function init() {
     if (btnExcel) {
         btnExcel.onclick = (e) => {
             e.preventDefault();
-            // El Excel ahora llevará el grado si está en ultimoFiltro
+            // El Excel ahora llevará grado y estado si están en ultimoFiltro
             !ultimoFiltro ? fechaService.descargarExcelAll() : fechaService.descargarExcel(ultimoFiltro);
         };
     }
