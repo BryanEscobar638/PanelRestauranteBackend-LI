@@ -154,7 +154,7 @@ def descargar_excel(
     if not registros:
         raise HTTPException(status_code=404, detail="No hay registros para los filtros indicados")
 
-    # 2. Crear Excel (Misma lógica de llenado)
+    # 2. Crear Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Registros Filtrados"
@@ -174,13 +174,13 @@ def descargar_excel(
     # 3. LÓGICA DE NOMBRE DINÁMICO MEJORADA
     partes_nombre = ["Reporte"]
     
-    # Prioridad: Nombre o Código
+    # Identidad del sujeto
     if nombre:
         partes_nombre.append(nombre.replace(" ", "_").strip())
     elif codigo_estudiante:
         partes_nombre.append(str(codigo_estudiante))
     
-    # Detalles adicionales
+    # Atributos de grupo
     if grado:
         partes_nombre.append(f"G{grado}")
     
@@ -190,16 +190,17 @@ def descargar_excel(
     if estado and estado.upper() != "TODOS":
         partes_nombre.append(estado.capitalize())
 
-    # Rango de fechas
+    # --- Lógica de Fechas vs "TODOS" ---
     if fecha_inicio and fecha_fin:
         if fecha_inicio == fecha_fin:
             partes_nombre.append(str(fecha_inicio))
         else:
             partes_nombre.append(f"{fecha_inicio}_al_{fecha_fin}")
     else:
-        partes_nombre.append(str(date.today()))
+        # Si no hay fechas especificadas, se marca como histórico completo
+        partes_nombre.append("TODOS")
 
-    # Unir todo con guiones bajos y limpiar posibles caracteres dobles
+    # Unir todo y generar nombre final
     filename_final = "_".join(partes_nombre) + ".xlsx"
 
     return StreamingResponse(
