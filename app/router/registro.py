@@ -125,7 +125,7 @@ def listar_registros_filtrados(
 
 @router.get("/excel", status_code=status.HTTP_200_OK,
     summary="Descargar con filtros en un excel",
-    description="Permite descargar registros filtrando por fecha, código, nombre, grado, tipo de plan o estado.")
+    description="Genera un archivo Excel con un nombre dinámico basado en los filtros aplicados.")
 def descargar_excel(
     fecha_inicio: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
@@ -133,15 +133,10 @@ def descargar_excel(
     nombre: Optional[str] = Query(None, description="Nombre del estudiante"),
     grado: Optional[str] = Query(None, description="Grado del estudiante"),
     plan: Optional[str] = Query(None, description="Tipo de plan (REFRIGERIO/ALMUERZO)"),
-    estado: Optional[str] = Query(None, description="Estado del registro (VALIDADO/NO_REGISTRADO)"), # <--- Nuevo parámetro
+    estado: Optional[str] = Query(None, description="Estado del registro (VALIDADO/NO_REGISTRADO)"),
     db: Session = Depends(get_db)
 ):
-    """
-    Genera un Excel con los registros filtrados aplicando la misma lógica del buscador,
-    pero ignorando el límite de paginación para traer todos los resultados.
-    """
-    
-    # 1. Llamamos a la función filtrada incluyendo los parámetros 'grado' y 'estado'
+    # 1. Obtener datos
     resultado = get_registers_filtered(
         db=db,
         fecha_inicio=fecha_inicio,
@@ -150,64 +145,67 @@ def descargar_excel(
         nombre=nombre,
         grado=grado,
         plan=plan,
-        estado=estado, # <--- Pasamos el estado aquí
+        estado=estado,
         page=1,
-        size=1000000  # Forzamos a que traiga todos los registros para el reporte
+        size=1000000 
     )
 
-    # Extraemos la lista de la llave 'data'
     registros = resultado.get("data", [])
-
     if not registros:
-        raise HTTPException(
-            status_code=404,
-            detail="No hay registros para los filtros indicados"
-        )
+        raise HTTPException(status_code=404, detail="No hay registros para los filtros indicados")
 
-    # 2. Crear Excel
+    # 2. Crear Excel (Misma lógica de llenado)
     wb = Workbook()
     ws = wb.active
     ws.title = "Registros Filtrados"
+    ws.append(["ID", "Código Estudiante", "Nombre", "Grado", "Tipo Alimentación", "Fecha Hora", "Plan", "Estado"])
 
-    # Definición de encabezados
-    headers = [
-        "ID", "Código Estudiante", "Nombre", "Grado", 
-        "Tipo Alimentación", "Fecha Hora", "Plan", "Estado"
-    ]
-    ws.append(headers)
-
-    # Llenado de filas
     for row in registros:
-        # Formateo de fecha para que sea legible en Excel
         fecha_str = row["fecha_hora"].strftime("%Y-%m-%d %H:%M:%S") if hasattr(row["fecha_hora"], "strftime") else str(row["fecha_hora"])
-        
         ws.append([
-            row["id"],
-            row["codigo_estudiante"],
-            row["nombre"],
-            row.get("grado", ""), 
-            row["tipo_alimentacion"],
-            fecha_str,
-            row["plan"],
-            row["estado"] # Se incluye la columna estado en el Excel
+            row["id"], row["codigo_estudiante"], row["nombre"], row.get("grado", ""), 
+            row["tipo_alimentacion"], fecha_str, row["plan"], row["estado"]
         ])
 
     buffer = BytesIO()
     wb.save(buffer)
     buffer.seek(0)
 
-    # 3. Nombre dinámico del archivo mejorado
-    # Incluimos grado y estado en el nombre si se filtró por ellos
-    etiqueta_grado = f"_grado_{grado}" if grado else ""
-    etiqueta_estado = f"_{estado.lower()}" if estado and estado.upper() != "TODOS" else ""
+    # 3. LÓGICA DE NOMBRE DINÁMICO MEJORADA
+    partes_nombre = ["Reporte"]
     
-    nombre_busqueda = (nombre or codigo_estudiante or "reporte").replace(" ", "_")
-    filename = f"reporte_{nombre_busqueda}{etiqueta_grado}{etiqueta_estado}_{date.today()}.xlsx"
+    # Prioridad: Nombre o Código
+    if nombre:
+        partes_nombre.append(nombre.replace(" ", "_").strip())
+    elif codigo_estudiante:
+        partes_nombre.append(str(codigo_estudiante))
+    
+    # Detalles adicionales
+    if grado:
+        partes_nombre.append(f"G{grado}")
+    
+    if plan and plan.upper() != "TODOS":
+        partes_nombre.append(plan.capitalize())
+        
+    if estado and estado.upper() != "TODOS":
+        partes_nombre.append(estado.capitalize())
+
+    # Rango de fechas
+    if fecha_inicio and fecha_fin:
+        if fecha_inicio == fecha_fin:
+            partes_nombre.append(str(fecha_inicio))
+        else:
+            partes_nombre.append(f"{fecha_inicio}_al_{fecha_fin}")
+    else:
+        partes_nombre.append(str(date.today()))
+
+    # Unir todo con guiones bajos y limpiar posibles caracteres dobles
+    filename_final = "_".join(partes_nombre) + ".xlsx"
 
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename_final}"}
     )
 
 @router.get(
