@@ -1,10 +1,18 @@
-from datetime import date
+from datetime import date, datetime
+from fastapi import FastAPI
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 import logging
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+from pytz import timezone
+
+from core.database import SessionLocal
 
 logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 # 1️⃣ Todos los registros recientes (LIMIT 15)
 def get_all_registers(db: Session):
@@ -235,7 +243,7 @@ def count_students_today(db: Session):
             FROM cafeteria.registros_validacion rv
             INNER JOIN cafeteria.estudiantes e ON rv.codigo_estudiante = e.codigo_estudiante
             WHERE rv.fecha = CURDATE()
-              AND rv.estado = 'VALIDADO' -- <--- Filtro crítico agregado
+            AND rv.estado = 'VALIDADO' -- <--- Filtro crítico agregado
         """)
         
         result = db.execute(query).mappings().first()
@@ -391,3 +399,4 @@ def buscar_estudiantes(
     except Exception as e:
         logger.error(f"Error en buscador de estudiantes: {e}")
         raise
+

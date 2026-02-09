@@ -1,1 +1,1 @@
-pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-dotenv passlib[bcrypt,argon2] email-validator pymysql python-jose[cryptography] pyjwt python-multipart pandas openpyxl
+pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-dotenv passlib[bcrypt,argon2] email-validator pymysql python-jose[cryptography] pyjwt python-multipart pandas openpyxl apscheduler pytz
