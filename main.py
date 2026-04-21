@@ -135,19 +135,19 @@ def ejecutar_registro_lunch():
 # ------------------------------------------------------------------
 # Tareas Programadas
 # ------------------------------------------------------------------
-# scheduler.add_job(ejecutar_registro_snack, 'cron', hour=11, minute=30)
-# scheduler.add_job(ejecutar_registro_lunch, 'cron', hour=14, minute=15)
+scheduler.add_job(ejecutar_registro_snack, 'cron', hour=11, minute=30)
+scheduler.add_job(ejecutar_registro_lunch, 'cron', hour=14, minute=15)
 
 # ------------------------------------------------------------------
 # Eventos de Ciclo de Vida
 # ------------------------------------------------------------------
-# @app.on_event("startup")
-# def startup_event():
-#     if not scheduler.running:
-#         scheduler.start()
-#         logger.info("🚀 SCHEDULER INICIADO: Buscando faltantes en Supabase.")
+@app.on_event("startup")
+def startup_event():
+    if not scheduler.running:
+        scheduler.start()
+        logger.info("🚀 SCHEDULER INICIADO: Buscando faltantes en Supabase.")
 
-# @app.on_event("shutdown")
-# def shutdown_event():
-#     scheduler.shutdown()
-#     logger.info("🛑 SCHEDULER APAGADO.")
+@app.on_event("shutdown")
+def shutdown_event():
+    scheduler.shutdown()
+    logger.info("🛑 SCHEDULER APAGADO.")
