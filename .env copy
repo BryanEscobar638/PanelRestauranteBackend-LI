@@ -1,0 +1,16 @@
+# DB_HOST= 127.0.0.1
+# DB_PORT= 3306
+# DB_USER= flaskuser
+# DB_PASSWORD= 1234
+# DB_NAME= cafeteria
+# DATABASE_URL=mysql+pymysql://flaskuser:1234@localhost:3306/cafeteria
+
+# --- Credenciales de Base de Datos (Supabase via Easypanel) ---
+# DB_USER=postgres
+# DB_PASSWORD=Apnos1110
+# DB_HOST=imagehosting-supabaseliceoingles.wahxoi.easypanel.host
+# DB_PORT=8432
+# DB_NAME=postgres
+
+# --- URL de Conexión ---
+# DATABASE_URL=postgresql+psycopg2://postgres:Apnos1110@imagehosting-supabaseliceoingles.wahxoi.easypanel.host:8432/postgres?sslmode=require
