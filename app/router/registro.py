@@ -394,6 +394,24 @@ def descargar_excel_all(
         )
 
 @router.get(
+    "/total-estudiantes", 
+    status_code=status.HTTP_200_OK,
+    summary="Obtener todos los estudiantes",
+    description="Obtiene el conteo total de estudiantes registrados en Supabase"
+)
+def obtener_total_estudiantes(db: Session = Depends(get_db)):
+    try:
+        # Llamamos a la función de búsqueda
+        total = count_all_students(db)
+        return {"total_estudiantes": total}
+    except Exception as e:
+        logger.error(f"❌ Error al obtener total de estudiantes: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al obtener la cantidad total de estudiantes en Supabase"
+        )
+
+@router.get(
     "/total-estudiantes-hoy", 
     status_code=status.HTTP_200_OK,
     summary="Obtiene el desglose de consumos por nivel educativo",

@@ -31,7 +31,7 @@ function cargarCartas(totalestudiantes, consumoshoy, planes, consumosmes) {
             <div class="card shadow-sm border-0 p-3 card-item d-flex flex-column">
                 <h4 class="text-muted small text-uppercase fw-bold text-center mb-0">Planes Activos</h4>
                 <div class="flex-grow-1 d-flex align-items-center justify-content-center">
-                    <p class="card-text fw-bold mb-0" style="font-size: 3.5rem;" id="planesactivos">${planes.total_estudiantes || 0}</p>
+                    <p class="card-text fw-bold mb-0" style="font-size: 3.5rem;" id="planesactivos">${planes.data.total_estudiantes|| 0}</p>
                 </div>
             </div>
 

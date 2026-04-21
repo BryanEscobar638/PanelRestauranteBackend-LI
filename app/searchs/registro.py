@@ -231,7 +231,7 @@ def count_all_students(db: Session) -> int:
         # Cambiamos 'cafeteria.' por 'public.' o lo eliminamos
         query = text("""
             SELECT COUNT(*)
-            FROM public.estudiantes
+            FROM public.estudiantes_caf
         """)
         # scalar() es perfecto aquí para obtener el número directamente
         result = db.execute(query).scalar()
@@ -244,16 +244,15 @@ def count_students_today(db: Session):
     try:
         query = text("""
             SELECT 
-                -- Conteos para SNACK (Solo validados)
-                -- Usamos ::INTEGER para convertir el grado en Postgres
-                SUM(CASE WHEN rv.plan = 'SNACK' AND (e.grado::INTEGER) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS snack_elementary,
-                SUM(CASE WHEN rv.plan = 'SNACK' AND (e.grado::INTEGER) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS snack_highschool,
+                -- Conteos para SNACK
+                SUM(CASE WHEN rv.plan = 'SNACK' AND e.grado ~ '^[0-9]+$' AND (e.grado::INTEGER) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS snack_elementary,
+                SUM(CASE WHEN rv.plan = 'SNACK' AND e.grado ~ '^[0-9]+$' AND (e.grado::INTEGER) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS snack_highschool,
                 
-                -- Conteos para LUNCH (Solo validados)
-                SUM(CASE WHEN rv.plan = 'LUNCH' AND (e.grado::INTEGER) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS lunch_elementary,
-                SUM(CASE WHEN rv.plan = 'LUNCH' AND (e.grado::INTEGER) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS lunch_highschool,
+                -- Conteos para LUNCH
+                SUM(CASE WHEN rv.plan = 'LUNCH' AND e.grado ~ '^[0-9]+$' AND (e.grado::INTEGER) BETWEEN 1 AND 5 THEN 1 ELSE 0 END) AS lunch_elementary,
+                SUM(CASE WHEN rv.plan = 'LUNCH' AND e.grado ~ '^[0-9]+$' AND (e.grado::INTEGER) BETWEEN 6 AND 12 THEN 1 ELSE 0 END) AS lunch_highschool,
                 
-                -- Totales generales (Solo validados)
+                -- Totales generales
                 SUM(CASE WHEN rv.plan = 'SNACK' THEN 1 ELSE 0 END) AS total_snack,
                 SUM(CASE WHEN rv.plan = 'LUNCH' THEN 1 ELSE 0 END) AS total_lunch,
                 COUNT(DISTINCT rv.codigo_estudiante) AS total_unicos
@@ -282,54 +281,52 @@ def count_students_today(db: Session):
         logger.error(f"Error al contar consumos segmentados en Supabase: {e}")
         raise
 
+
 def total_planalimenticio(db: Session):
     try:
-        # 1️⃣ Total de estudiantes con tipo de alimentación ≠ "NINGUNO"
-        # Cambiamos cafeteria.estudiantes -> public.estudiantes
+        # 1️⃣ Total de estudiantes con tipo de alimentación ≠ 'NINGUNO'
+        # Usamos public.estudiantes_caf
         total_estudiantes_query = text("""
-            SELECT COUNT(*)
+            SELECT COUNT(*) 
             FROM public.estudiantes_caf
-            WHERE tipo_alimentacion != 'NINGUNO'
+            WHERE tipo_alimentacion IS NOT NULL 
+              AND tipo_alimentacion != 'NINGUNO'
         """)
         total_estudiantes = db.execute(total_estudiantes_query).scalar() or 0
 
-        # 2️⃣ Total de estudiantes que consumieron hoy
-        # IMPORTANTE: En Postgres es mejor usar CURRENT_DATE para aprovechar índices 
-        # o pasar el objeto date de Python directamente como lo haces.
+        # 2️⃣ Total que consumieron hoy (Ajustado a la zona horaria de Colombia)
+        # Usamos la columna 'fecha' que ya tienes como DATE en tu esquema para mayor velocidad
         total_consumieron_hoy_query = text("""
             SELECT COUNT(DISTINCT rv.codigo_estudiante)
             FROM public.registros_validacion_caf rv
             INNER JOIN public.estudiantes_caf e
                 ON rv.codigo_estudiante = e.codigo_estudiante
-            WHERE rv.fecha = :hoy
-            AND e.tipo_alimentacion != 'NINGUNO'
+            WHERE rv.fecha = CURRENT_DATE
+              AND e.tipo_alimentacion != 'NINGUNO'
+              AND rv.estado = 'VALIDADO'
         """)
-        
-        total_consumieron_hoy = db.execute(
-            total_consumieron_hoy_query, 
-            {"hoy": date.today()}
-        ).scalar() or 0
+        total_consumieron_hoy = db.execute(total_consumieron_hoy_query).scalar() or 0
 
-        # 3️⃣ Total por tipo de alimentación
+        # 3️⃣ Total por tipo de alimentación (Agrupado)
         por_tipo_query = text("""
-            SELECT e.tipo_alimentacion, COUNT(*) AS total
-            FROM public.estudiantes_caf e
-            WHERE e.tipo_alimentacion != 'NINGUNO'
-            GROUP BY e.tipo_alimentacion
+            SELECT tipo_alimentacion, COUNT(*) AS total
+            FROM public.estudiantes_caf
+            WHERE tipo_alimentacion IS NOT NULL 
+              AND tipo_alimentacion != 'NINGUNO'
+            GROUP BY tipo_alimentacion
         """)
-        por_tipo_result = db.execute(por_tipo_query).mappings().all()
-
-        # Convertimos a una lista de diccionarios limpia para evitar errores de serialización
-        total_por_tipo = [dict(row) for row in por_tipo_result]
+        result_tipo = db.execute(por_tipo_query).mappings().all()
+        # Convertimos a lista de dicts para asegurar la serialización JSON
+        por_tipo = [dict(row) for row in result_tipo]
 
         return {
-            "total_estudiantes": int(total_estudiantes),
-            "total_consumieron_hoy": int(total_consumieron_hoy),
-            "total_por_tipo": total_por_tipo
+            "total_estudiantes": total_estudiantes,
+            "total_consumieron_hoy": total_consumieron_hoy,
+            "total_por_tipo": por_tipo
         }
 
     except Exception as e:
-        logger.error(f"Error al calcular totales del dashboard en Supabase: {e}")
+        logger.error(f"❌ Error al calcular totales del dashboard en Supabase: {e}")
         raise
 
 def consumo_mes_actual(db: Session):
