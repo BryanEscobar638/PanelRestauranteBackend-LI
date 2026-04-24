@@ -82,11 +82,12 @@ def ejecutar_registro_snack():
                 'NO RECLAMO', 
                 (NOW() AT TIME ZONE 'America/Bogota'),
                 CURRENT_DATE
-            FROM public.estudiantes e
-            LEFT JOIN public.registros_validacion r ON e.codigo_estudiante = r.codigo_estudiante 
+            FROM public.estudiantes_caf e
+            LEFT JOIN public.registros_validacion_caf r ON e.codigo_estudiante = r.codigo_estudiante 
                                             AND r.fecha = CURRENT_DATE
                                             AND r.plan = 'SNACK'
-            WHERE r.codigo_estudiante IS NULL 
+            WHERE r.codigo_estudiante IS NULL
+                AND e.codigo_estudiante <> '0000' -- Nueva validación
                 AND e.tipo_alimentacion NOT IN ('NINGUNO', 'ALMUERZO', 'SOLO ALMUERZO')
                 AND e.grado NOT IN ('K2', 'K3', 'K4', 'K5', '1', '2');
         """)
@@ -115,11 +116,12 @@ def ejecutar_registro_lunch():
                 'NO RECLAMO', 
                 (NOW() AT TIME ZONE 'America/Bogota'),
                 CURRENT_DATE
-            FROM public.estudiantes e
-            LEFT JOIN public.registros_validacion r ON e.codigo_estudiante = r.codigo_estudiante 
+            FROM public.estudiantes_caf e
+            LEFT JOIN public.registros_validacion_caf r ON e.codigo_estudiante = r.codigo_estudiante 
                                             AND r.fecha = CURRENT_DATE
                                             AND r.plan = 'LUNCH'
-            WHERE r.codigo_estudiante IS NULL 
+            WHERE r.codigo_estudiante IS NULL
+                AND e.codigo_estudiante <> '0000' -- Nueva validación
                 AND e.tipo_alimentacion NOT IN ('NINGUNO', 'REFRIGERIO', 'SOLO REFRIGERIO')
                 AND e.grado NOT IN ('K2', 'K3', 'K4', 'K5', '1', '2');
         """)
