@@ -71,7 +71,7 @@ def ejecutar_registro_snack():
     db = SessionLocal()
     try:
         query = text("""
-            INSERT INTO public.registros_validacion (
+            INSERT INTO public.registros_validacion_caf (
                 codigo_estudiante, nombre, tipo_alimentacion, plan, estado, fecha_hora, fecha
             )
             SELECT 
@@ -104,7 +104,7 @@ def ejecutar_registro_lunch():
     db = SessionLocal()
     try:
         query = text("""
-            INSERT INTO public.registros_validacion (
+            INSERT INTO public.registros_validacion_caf (
                 codigo_estudiante, nombre, tipo_alimentacion, plan, estado, fecha_hora, fecha
             )
             SELECT 
